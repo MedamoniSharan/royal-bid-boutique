@@ -1,19 +1,10 @@
-import { AnimatedButton } from "@/components/reactbits/AnimatedButton";
-import { HoverCard } from "@/components/reactbits/HoverCard";
 import { AnimatedText } from "@/components/reactbits/AnimatedText";
-import { GlowButton } from "@/components/reactbits/GlowButton";
-import { FloatingCard } from "@/components/reactbits/FloatingCard";
-import { Clock, Gavel, ShoppingBag, Star } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import Orb from "@/components/Orb";
 import { useEffect, useState } from "react";
-import heroImage from "@/assets/hero-auction.jpg";
 
 export default function ParallaxHero() {
   const [scrollY, setScrollY] = useState(0);
-  const [timeLeft, setTimeLeft] = useState({
-    hours: 23,
-    minutes: 45,
-    seconds: 30
-  });
 
   useEffect(() => {
     const handleScroll = () => setScrollY(window.scrollY);
@@ -21,38 +12,46 @@ export default function ParallaxHero() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setTimeLeft(prev => {
-        if (prev.seconds > 0) {
-          return { ...prev, seconds: prev.seconds - 1 };
-        } else if (prev.minutes > 0) {
-          return { ...prev, minutes: prev.minutes - 1, seconds: 59 };
-        } else if (prev.hours > 0) {
-          return { hours: prev.hours - 1, minutes: 59, seconds: 59 };
-        }
-        return prev;
-      });
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, []);
-
   return (
-    <section className="relative h-screen overflow-hidden bg-gradient-hero">
-      {/* Parallax Background */}
+    <section className="relative h-screen overflow-hidden bg-black">
+      {/* Orb Background */}
       <div 
-        className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-20"
+        className="absolute inset-0"
         style={{
-          backgroundImage: `url(${heroImage})`,
           transform: `translateY(${scrollY * 0.5}px)`,
         }}
-      />
+      >
+        <Orb
+          hue={0}
+          hoverIntensity={0.2}
+          rotateOnHover={true}
+          forceHoverState={false}
+        />
+      </div>
+
+      {/* Floating Particles */}
+      <div 
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          transform: `translateY(${scrollY * 0.8}px)`,
+        }}
+      >
+        <div className="absolute top-20 left-10 w-2 h-2 bg-blue-400 rounded-full opacity-60 animate-pulse"></div>
+        <div className="absolute top-40 right-20 w-1 h-1 bg-white rounded-full opacity-40 animate-pulse" style={{ animationDelay: '1s' }}></div>
+        <div className="absolute bottom-40 left-20 w-3 h-3 bg-purple-400 rounded-full opacity-50 animate-pulse" style={{ animationDelay: '2s' }}></div>
+        <div className="absolute top-60 left-1/3 w-1.5 h-1.5 bg-cyan-400 rounded-full opacity-70 animate-pulse" style={{ animationDelay: '0.5s' }}></div>
+        <div className="absolute bottom-60 right-1/3 w-2 h-2 bg-pink-400 rounded-full opacity-60 animate-pulse" style={{ animationDelay: '1.5s' }}></div>
+      </div>
       
       {/* Content */}
       <div className="relative z-10 flex h-full items-center justify-center px-4">
         <div className="max-w-6xl mx-auto text-center text-white">
-          <div className="animate-fade-in-up">
+          <div 
+            className="animate-fade-in-up pointer-events-none"
+            style={{
+              transform: `translateY(${scrollY * 0.3}px)`,
+            }}
+          >
             <AnimatedText 
               text="Premium"
               variant="fade-in"
@@ -74,78 +73,32 @@ export default function ParallaxHero() {
             />
           </div>
 
-          {/* Live Auction Counter */}
-          <HoverCard variant="premium" hover="glow" className="inline-block p-8 mb-12 bg-black/20 backdrop-blur-md border-gold/30">
-            <div className="flex items-center gap-2 mb-4 justify-center">
-              <Clock className="w-6 h-6 text-gold" />
-              <span className="text-gold font-semibold text-lg">NEXT AUCTION ENDS IN</span>
-            </div>
-            <div className="flex gap-6 justify-center">
-              <FloatingCard delay={0.2}>
-                <div className="text-center">
-                  <div className="text-4xl font-bold text-white">{timeLeft.hours.toString().padStart(2, '0')}</div>
-                  <div className="text-gold text-sm">HOURS</div>
-                </div>
-              </FloatingCard>
-              <div className="text-4xl font-bold text-gold">:</div>
-              <FloatingCard delay={0.4}>
-                <div className="text-center">
-                  <div className="text-4xl font-bold text-white">{timeLeft.minutes.toString().padStart(2, '0')}</div>
-                  <div className="text-gold text-sm">MINUTES</div>
-                </div>
-              </FloatingCard>
-              <div className="text-4xl font-bold text-gold">:</div>
-              <FloatingCard delay={0.6}>
-                <div className="text-center">
-                  <div className="text-4xl font-bold text-white">{timeLeft.seconds.toString().padStart(2, '0')}</div>
-                  <div className="text-gold text-sm">SECONDS</div>
-                </div>
-              </FloatingCard>
-            </div>
-          </HoverCard>
-
           {/* Action Buttons */}
-          <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
-            <GlowButton size="lg" glowColor="crimson" className="px-8 py-4 text-lg">
-              <Gavel className="w-6 h-6 mr-2" />
+          <div 
+            className="flex flex-col sm:flex-row gap-4 justify-center items-center pointer-events-auto"
+            style={{
+              transform: `translateY(${scrollY * 0.1}px)`,
+            }}
+          >
+            <Button 
+              size="lg" 
+              className="bg-blue-500 hover:bg-blue-600 text-white px-8 py-4 text-lg font-semibold rounded-full hover:scale-105 transition-all duration-200 shadow-lg hover:shadow-blue-500/25"
+            >
               Join Live Auction
-            </GlowButton>
+            </Button>
             
-            <AnimatedButton variant="outline" size="lg" className="px-8 py-4 text-lg">
-              <ShoppingBag className="w-6 h-6 mr-2" />
-              Shop Retail
-            </AnimatedButton>
-            
-            <AnimatedButton variant="shimmer" size="lg" className="px-8 py-4 text-lg">
-              <Star className="w-6 h-6 mr-2" />
-              View Anti-Pieces
-            </AnimatedButton>
+            <Button 
+              variant="outline" 
+              size="lg" 
+              className="border-white text-white hover:bg-white hover:text-black px-8 py-4 text-lg font-semibold rounded-full hover:scale-105 transition-all duration-200"
+            >
+              Browse Collection
+            </Button>
           </div>
 
-          {/* Floating Stats */}
-          <div className="absolute bottom-20 left-1/2 transform -translate-x-1/2 hidden md:flex gap-12 text-center">
-            <div className="animate-parallax-float">
-              <div className="text-3xl font-bold text-gold">2,500+</div>
-              <div className="text-sm opacity-80">Active Bidders</div>
-            </div>
-            <div className="animate-parallax-float" style={{ animationDelay: "1s" }}>
-              <div className="text-3xl font-bold text-gold">$2.8M</div>
-              <div className="text-sm opacity-80">Items Sold</div>
-            </div>
-            <div className="animate-parallax-float" style={{ animationDelay: "2s" }}>
-              <div className="text-3xl font-bold text-gold">98%</div>
-              <div className="text-sm opacity-80">Satisfaction Rate</div>
-            </div>
-          </div>
         </div>
       </div>
 
-      {/* Scroll Indicator */}
-      <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 animate-bounce">
-        <div className="w-6 h-10 border-2 border-gold rounded-full flex justify-center">
-          <div className="w-1 h-3 bg-gold rounded-full mt-2 animate-pulse"></div>
-        </div>
-      </div>
     </section>
   );
 }
