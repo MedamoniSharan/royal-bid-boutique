@@ -1,5 +1,8 @@
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
+import { AnimatedButton } from "@/components/reactbits/AnimatedButton";
+import { HoverCard } from "@/components/reactbits/HoverCard";
+import { AnimatedText } from "@/components/reactbits/AnimatedText";
+import { GlowButton } from "@/components/reactbits/GlowButton";
+import { FloatingCard } from "@/components/reactbits/FloatingCard";
 import { Clock, Gavel, ShoppingBag, Star } from "lucide-react";
 import { useEffect, useState } from "react";
 import heroImage from "@/assets/hero-auction.jpg";
@@ -50,58 +53,73 @@ export default function ParallaxHero() {
       <div className="relative z-10 flex h-full items-center justify-center px-4">
         <div className="max-w-6xl mx-auto text-center text-white">
           <div className="animate-fade-in-up">
-            <h1 className="text-6xl md:text-8xl font-bold mb-6 tracking-tight">
-              Premium
-              <span className="block bg-gradient-premium bg-clip-text text-transparent animate-gold-shimmer">
-                Auctions
-              </span>
-            </h1>
+            <AnimatedText 
+              text="Premium"
+              variant="fade-in"
+              className="text-6xl md:text-8xl font-bold mb-2 tracking-tight block"
+              delay={200}
+            />
+            <AnimatedText
+              text="Auctions"
+              variant="shimmer"
+              className="text-6xl md:text-8xl font-bold mb-6 tracking-tight block"
+              delay={800}
+            />
             
-            <p className="text-xl md:text-2xl mb-12 max-w-3xl mx-auto opacity-90">
-              Discover rare collectibles, luxury items, and exclusive pieces in our premier auction house
-            </p>
+            <AnimatedText
+              text="Discover rare collectibles, luxury items, and exclusive pieces in our premier auction house"
+              variant="slide-up"
+              className="text-xl md:text-2xl mb-12 max-w-3xl mx-auto opacity-90 block"
+              delay={1200}
+            />
           </div>
 
           {/* Live Auction Counter */}
-          <Card className="inline-block p-8 mb-12 bg-black/20 backdrop-blur-md border-gold/30 animate-pulse-glow">
+          <HoverCard variant="premium" hover="glow" className="inline-block p-8 mb-12 bg-black/20 backdrop-blur-md border-gold/30">
             <div className="flex items-center gap-2 mb-4 justify-center">
               <Clock className="w-6 h-6 text-gold" />
               <span className="text-gold font-semibold text-lg">NEXT AUCTION ENDS IN</span>
             </div>
             <div className="flex gap-6 justify-center">
-              <div className="text-center">
-                <div className="text-4xl font-bold text-white">{timeLeft.hours.toString().padStart(2, '0')}</div>
-                <div className="text-gold text-sm">HOURS</div>
-              </div>
+              <FloatingCard delay={0.2}>
+                <div className="text-center">
+                  <div className="text-4xl font-bold text-white">{timeLeft.hours.toString().padStart(2, '0')}</div>
+                  <div className="text-gold text-sm">HOURS</div>
+                </div>
+              </FloatingCard>
               <div className="text-4xl font-bold text-gold">:</div>
-              <div className="text-center">
-                <div className="text-4xl font-bold text-white">{timeLeft.minutes.toString().padStart(2, '0')}</div>
-                <div className="text-gold text-sm">MINUTES</div>
-              </div>
+              <FloatingCard delay={0.4}>
+                <div className="text-center">
+                  <div className="text-4xl font-bold text-white">{timeLeft.minutes.toString().padStart(2, '0')}</div>
+                  <div className="text-gold text-sm">MINUTES</div>
+                </div>
+              </FloatingCard>
               <div className="text-4xl font-bold text-gold">:</div>
-              <div className="text-center">
-                <div className="text-4xl font-bold text-white">{timeLeft.seconds.toString().padStart(2, '0')}</div>
-                <div className="text-gold text-sm">SECONDS</div>
-              </div>
+              <FloatingCard delay={0.6}>
+                <div className="text-center">
+                  <div className="text-4xl font-bold text-white">{timeLeft.seconds.toString().padStart(2, '0')}</div>
+                  <div className="text-gold text-sm">SECONDS</div>
+                </div>
+              </FloatingCard>
             </div>
-          </Card>
+          </HoverCard>
 
           {/* Action Buttons */}
           <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
-            <Button size="lg" className="bg-gradient-urgent hover:scale-105 transition-transform shadow-premium px-8 py-4 text-lg">
+            <GlowButton size="lg" glowColor="crimson" className="px-8 py-4 text-lg">
               <Gavel className="w-6 h-6 mr-2" />
               Join Live Auction
-            </Button>
+            </GlowButton>
             
-            <Button variant="outline" size="lg" className="border-gold text-gold hover:bg-gold hover:text-charcoal transition-all px-8 py-4 text-lg">
+            <AnimatedButton variant="outline" size="lg" className="px-8 py-4 text-lg">
               <ShoppingBag className="w-6 h-6 mr-2" />
               Shop Retail
-            </Button>
+            </AnimatedButton>
             
-            <Button variant="secondary" size="lg" className="bg-charcoal/80 text-gold hover:bg-charcoal transition-all px-8 py-4 text-lg">
+            <AnimatedButton variant="shimmer" size="lg" className="px-8 py-4 text-lg">
               <Star className="w-6 h-6 mr-2" />
               View Anti-Pieces
-            </Button>
+            </AnimatedButton>
           </div>
 
           {/* Floating Stats */}

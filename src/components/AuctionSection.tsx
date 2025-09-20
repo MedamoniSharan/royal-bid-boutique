@@ -1,5 +1,8 @@
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { AnimatedButton } from "@/components/reactbits/AnimatedButton";
+import { HoverCard } from "@/components/reactbits/HoverCard";
+import { ShimmerCard } from "@/components/reactbits/ShimmerCard";
+import { AnimatedText } from "@/components/reactbits/AnimatedText";
+import { GlowButton } from "@/components/reactbits/GlowButton";
 import { Badge } from "@/components/ui/badge";
 import { Clock, Eye, Gavel, TrendingUp } from "lucide-react";
 
@@ -47,18 +50,24 @@ export default function AuctionSection() {
     <section className="py-20 bg-background">
       <div className="max-w-7xl mx-auto px-4">
         <div className="text-center mb-16">
-          <h2 className="text-5xl font-bold mb-6 text-foreground">
-            Live <span className="text-crimson">Auctions</span>
-          </h2>
-          <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-            Bid on exclusive items from our curated collection of luxury goods, collectibles, and rare finds
-          </p>
+          <AnimatedText
+            text="Live Auctions"
+            variant="split"
+            className="text-5xl font-bold mb-6 text-foreground"
+            delay={200}
+          />
+          <AnimatedText
+            text="Bid on exclusive items from our curated collection of luxury goods, collectibles, and rare finds"
+            variant="fade-in"
+            className="text-xl text-muted-foreground max-w-3xl mx-auto"
+            delay={600}
+          />
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {auctionItems.map((item, index) => (
-            <Card key={item.id} className="group hover:shadow-premium transition-all duration-300 animate-fade-in-up border-border/50" style={{ animationDelay: `${index * 0.1}s` }}>
-              <CardHeader className="p-0">
+            <ShimmerCard key={item.id} className="group border-border/50" shimmerColor="gold">
+              <div className="p-0">
                 <div className="relative overflow-hidden rounded-t-lg">
                   <img 
                     src={item.image} 
@@ -84,10 +93,10 @@ export default function AuctionSection() {
                     </Badge>
                   </div>
                 </div>
-              </CardHeader>
+              </div>
 
-              <CardContent className="p-6">
-                <CardTitle className="text-xl mb-2 text-foreground">{item.title}</CardTitle>
+              <div className="p-6">
+                <h3 className="text-xl mb-2 text-foreground font-bold">{item.title}</h3>
                 <p className="text-muted-foreground mb-4">{item.description}</p>
                 
                 <div className="flex items-center gap-4 mb-4">
@@ -111,26 +120,26 @@ export default function AuctionSection() {
                     <span className="text-lg font-semibold text-gold">${item.nextBid.toLocaleString()}</span>
                   </div>
                 </div>
-              </CardContent>
+              </div>
 
-              <CardFooter className="p-6 pt-0 space-y-3">
-                <Button className="w-full bg-gradient-urgent hover:scale-105 transition-transform shadow-gold">
+              <div className="p-6 pt-0 space-y-3">
+                <GlowButton className="w-full" glowColor="crimson">
                   <Gavel className="w-4 h-4 mr-2" />
                   Place Bid
-                </Button>
-                <Button variant="outline" className="w-full border-gold text-gold hover:bg-gold hover:text-charcoal">
+                </GlowButton>
+                <AnimatedButton variant="outline" className="w-full">
                   <TrendingUp className="w-4 h-4 mr-2" />
                   View Details
-                </Button>
-              </CardFooter>
-            </Card>
+                </AnimatedButton>
+              </div>
+            </ShimmerCard>
           ))}
         </div>
 
         <div className="text-center mt-12">
-          <Button size="lg" variant="outline" className="border-primary text-primary hover:bg-primary hover:text-primary-foreground px-8 py-4">
+          <AnimatedButton size="lg" variant="outline" className="px-8 py-4">
             View All Auctions
-          </Button>
+          </AnimatedButton>
         </div>
       </div>
     </section>

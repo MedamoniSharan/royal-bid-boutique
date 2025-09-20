@@ -1,3 +1,5 @@
+import { AnimatedButton } from "@/components/reactbits/AnimatedButton";
+import { GlowButton } from "@/components/reactbits/GlowButton";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { 
@@ -100,7 +102,7 @@ export default function Navbar() {
                         <p className="text-sm text-muted-foreground mb-3">
                           Membership required to view collection
                         </p>
-                        <Button size="sm" className="bg-gold text-charcoal hover:bg-gold-light">
+                        <Button size="sm" className="bg-gold text-charcoal hover:bg-gold-light px-6 py-3">
                           Request Access
                         </Button>
                       </div>
@@ -113,25 +115,24 @@ export default function Navbar() {
 
           {/* Right Actions */}
           <div className="flex items-center gap-3">
-            <Button variant="ghost" size="sm" className="hidden sm:flex">
+            <AnimatedButton variant="secondary" size="sm" className="hidden sm:flex">
               <Search className="w-4 h-4" />
-            </Button>
+            </AnimatedButton>
             
-            <Button variant="ghost" size="sm" className="hidden sm:flex">
+            <AnimatedButton variant="secondary" size="sm" className="hidden sm:flex">
               <User className="w-4 h-4" />
-            </Button>
+            </AnimatedButton>
 
-            <Button size="sm" className="bg-gradient-urgent text-white px-4">
+            <GlowButton size="sm" glowColor="crimson" className="px-4">
               <Gavel className="w-4 h-4 mr-2" />
               <span className="hidden sm:inline">Join Auction</span>
-            </Button>
+            </GlowButton>
 
-            {/* Mobile Menu */}
             <Sheet>
               <SheetTrigger asChild>
-                <Button variant="ghost" size="sm" className="md:hidden">
+                <AnimatedButton variant="secondary" size="sm" className="md:hidden">
                   <Menu className="w-5 h-5" />
-                </Button>
+                </AnimatedButton>
               </SheetTrigger>
               <SheetContent side="right" className="w-80">
                 <div className="space-y-6 mt-6">
@@ -168,9 +169,9 @@ export default function Navbar() {
                       <p className="text-sm text-muted-foreground mb-3">
                         Exclusive membership required
                       </p>
-                      <Button size="sm" className="w-full bg-gold text-charcoal hover:bg-gold-light">
+                      <GlowButton size="sm" glowColor="gold" className="w-full">
                         Request Access
-                      </Button>
+                      </GlowButton>
                     </div>
                   </div>
                 </div>
