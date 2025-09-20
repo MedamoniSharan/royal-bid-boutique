@@ -15,8 +15,8 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
 export default function Navbar() {
   return (
-    <nav className="fixed top-0 w-full z-50 bg-white/95 backdrop-blur-md border-b border-border/50 shadow-elegant">
-      <div className="max-w-7xl mx-auto px-4">
+    <nav className="fixed top-0 w-full z-50 bg-transparent backdrop-blur-md border-b border-border/20 shadow-elegant rounded-b-2xl">
+      <div className="max-w-7xl mx-auto px-4 rounded-b-2xl">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <div className="flex items-center gap-3">
