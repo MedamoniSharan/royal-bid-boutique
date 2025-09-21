@@ -1,4 +1,4 @@
-import Navbar from "@/components/Navbar";
+import { ResizableNavbar } from "@/components/ResizableNavbar";
 import ParallaxHero from "@/components/ParallaxHero";
 import MagicBentoSection from "@/components/MagicBentoSection";
 import AuctionSection from "@/components/AuctionSection";
@@ -11,7 +11,7 @@ import { SparklesFooter } from "@/components/SparklesFooter";
 const Index = () => {
   return (
     <div className="min-h-screen">
-      <Navbar />
+      <ResizableNavbar />
       <ParallaxHero />
       
       <AuctionSection />
