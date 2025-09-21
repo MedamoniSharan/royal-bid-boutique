@@ -5,6 +5,7 @@ import { AnimatedText } from "@/components/reactbits/AnimatedText";
 import { GlowButton } from "@/components/reactbits/GlowButton";
 import { Badge } from "@/components/ui/badge";
 import { Clock, Eye, Gavel, TrendingUp } from "lucide-react";
+import { SparklesText } from "@/components/ui/sparkles-text";
 
 const auctionItems = [
   {
@@ -50,19 +51,10 @@ export default function AuctionSection() {
     <section className="py-20 bg-background">
       <div className="max-w-7xl mx-auto px-4">
         <div className="text-center mb-16">
-          <AnimatedText
-            text="Live Auctions"
-            variant="split"
-            className="text-5xl font-bold mb-6 text-foreground"
-            delay={200}
-          />
-          <AnimatedText
-            text="Bid on exclusive items from our curated collection of luxury goods, collectibles, and rare finds"
-            variant="fade-in"
-            className="text-xl text-muted-foreground max-w-3xl mx-auto"
-            delay={600}
-          />
+        <SparklesText> Live Auction</SparklesText>
+
         </div>
+        
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {auctionItems.map((item, index) => (
