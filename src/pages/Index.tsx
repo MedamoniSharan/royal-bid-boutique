@@ -6,6 +6,7 @@ import { ThreeDMarqueeDemo } from "@/components/ThreeDMarqueeDemo";
 import RetailSection from "@/components/RetailSection";
 import { HeroParallaxDemo } from "@/components/HeroParallaxDemo";
 import AntiPiecesSection from "@/components/AntiPiecesSection";
+import { GoogleGeminiEffectDemo } from "@/components/GoogleGeminiEffectDemo";
 import { MarqueeDemo } from "@/components/magicui";
 import { SparklesFooter } from "@/components/SparklesFooter";
 
@@ -15,14 +16,21 @@ const Index = () => {
       <ResizableNavbar />
       <ParallaxHero />
       
-      <AuctionSection />
+      <section id="auctions">
+        <AuctionSection />
+      </section>
       <ThreeDMarqueeDemo />
-      <RetailSection />
+      <section id="retail">
+        <RetailSection />
+      </section>
       <MagicBentoSection />
       <HeroParallaxDemo />
-      <AntiPiecesSection />
+      <section id="anti-pieces">
+        <AntiPiecesSection />
+      </section>
+      <GoogleGeminiEffectDemo />
       
-      <section className="py-20">
+      <section id="about" className="py-20">
         <div className="container mx-auto px-4">
           <h2 className="text-3xl font-bold text-center mb-12 text-foreground">
             What Our Clients Say

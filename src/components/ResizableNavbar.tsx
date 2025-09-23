@@ -11,26 +11,31 @@ import {
   MobileNavMenu,
 } from "@/components/ui/resizable-navbar";
 import { useState } from "react";
+import { smoothScrollTo } from "@/utils/smoothScroll";
 
 export function ResizableNavbar() {
   const navItems = [
     {
       name: "Auctions",
-      link: "#auctions",
+      link: "auctions",
     },
     {
       name: "Retail",
-      link: "#retail",
+      link: "retail",
     },
     {
       name: "Anti-Pieces",
-      link: "#anti-pieces",
+      link: "anti-pieces",
     },
     {
       name: "About",
-      link: "#about",
+      link: "about",
     },
   ];
+
+  const handleNavClick = (link: string) => {
+    smoothScrollTo(link);
+  };
 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -40,7 +45,7 @@ export function ResizableNavbar() {
         {/* Desktop Navigation */}
         <NavBody>
           <NavbarLogo />
-          <NavItems items={navItems} />
+          <NavItems items={navItems} onItemClick={() => {}} />
           <div className="flex items-center gap-4">
             <NavbarButton variant="secondary">Login</NavbarButton>
             <NavbarButton variant="primary">Join Auction</NavbarButton>
@@ -62,14 +67,16 @@ export function ResizableNavbar() {
             onClose={() => setIsMobileMenuOpen(false)}
           >
             {navItems.map((item, idx) => (
-              <a
+              <button
                 key={`mobile-link-${idx}`}
-                href={item.link}
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="relative text-neutral-600 dark:text-neutral-300"
+                onClick={() => {
+                  handleNavClick(item.link);
+                  setIsMobileMenuOpen(false);
+                }}
+                className="relative text-neutral-600 dark:text-neutral-300 text-left"
               >
                 <span className="block">{item.name}</span>
-              </a>
+              </button>
             ))}
             <div className="flex w-full flex-col gap-4">
               <NavbarButton
