@@ -2,6 +2,7 @@ import { ResizableNavbar } from "@/components/ResizableNavbar";
 import ParallaxHero from "@/components/ParallaxHero";
 import MagicBentoSection from "@/components/MagicBentoSection";
 import AuctionSection from "@/components/AuctionSection";
+import { ThreeDMarqueeDemo } from "@/components/ThreeDMarqueeDemo";
 import RetailSection from "@/components/RetailSection";
 import { HeroParallaxDemo } from "@/components/HeroParallaxDemo";
 import AntiPiecesSection from "@/components/AntiPiecesSection";
@@ -15,6 +16,7 @@ const Index = () => {
       <ParallaxHero />
       
       <AuctionSection />
+      <ThreeDMarqueeDemo />
       <RetailSection />
       <MagicBentoSection />
       <HeroParallaxDemo />
