@@ -51,14 +51,14 @@ const retailProducts = [
 
 export default function RetailSection() {
   return (
-    <section className="py-20 bg-muted/30">
+    <section className="py-20 bg-background">
       <div className="max-w-7xl mx-auto px-4">
         {/* Hero Banner */}
         <div 
           className="relative rounded-2xl overflow-hidden mb-16 h-80 bg-cover bg-center"
           style={{ backgroundImage: `url(${retailImage})` }}
         >
-          <div className="absolute inset-0 bg-royal-blue/80 flex items-center justify-center">
+          <div className="absolute inset-0 bg-charcoal/80 flex items-center justify-center">
             <div className="text-center text-white max-w-2xl">
               <h2 className="text-5xl font-bold mb-4">Premium Retail</h2>
               <p className="text-xl opacity-90 mb-6">Curated luxury products available for immediate purchase</p>
@@ -86,8 +86,8 @@ export default function RetailSection() {
                       className={`
                         ${product.badge === 'Best Seller' ? 'bg-gold text-charcoal' : ''}
                         ${product.badge === 'New Arrival' ? 'bg-crimson text-white' : ''}
-                        ${product.badge === 'Limited Edition' ? 'bg-primary text-primary-foreground' : ''}
-                        ${product.badge === 'Trending' ? 'bg-secondary text-secondary-foreground' : ''}
+                        ${product.badge === 'Limited Edition' ? 'bg-charcoal text-white' : ''}
+                        ${product.badge === 'Trending' ? 'bg-gold text-charcoal' : ''}
                       `}
                     >
                       {product.badge}
@@ -121,7 +121,7 @@ export default function RetailSection() {
                     <span className="text-sm text-muted-foreground line-through">${product.originalPrice}</span>
                   )}
                   {product.originalPrice && (
-                    <Badge variant="destructive" className="text-xs">
+                    <Badge className="bg-crimson text-white text-xs">
                       -{Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)}%
                     </Badge>
                   )}
@@ -129,7 +129,7 @@ export default function RetailSection() {
               </CardContent>
 
               <CardFooter className="p-4 pt-0">
-                <Button className="w-full bg-primary hover:bg-primary/90 text-primary-foreground">
+                <Button className="w-full bg-charcoal hover:bg-charcoal/90 text-white">
                   <ShoppingBag className="w-4 h-4 mr-2" />
                   Add to Cart
                 </Button>
@@ -139,7 +139,7 @@ export default function RetailSection() {
         </div>
 
         <div className="text-center mt-12">
-          <Button size="lg" variant="outline" className="border-primary text-primary hover:bg-primary hover:text-primary-foreground px-8 py-4">
+          <Button size="lg" variant="outline" className="border-gold text-gold hover:bg-gold hover:text-charcoal px-8 py-4">
             View All Products
           </Button>
         </div>
