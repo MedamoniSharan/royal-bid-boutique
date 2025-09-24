@@ -11,6 +11,7 @@ import {
   MobileNavMenu,
 } from "@/components/ui/resizable-navbar";
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { smoothScrollTo } from "@/utils/smoothScroll";
 
 export function ResizableNavbar() {
@@ -47,8 +48,16 @@ export function ResizableNavbar() {
           <NavbarLogo />
           <NavItems items={navItems} onItemClick={() => {}} />
           <div className="flex items-center gap-4">
-            <NavbarButton variant="secondary">Login</NavbarButton>
-            <NavbarButton variant="primary">Join Auction</NavbarButton>
+            <Link to="/login">
+              <NavbarButton variant="secondary">
+                Login
+              </NavbarButton>
+            </Link>
+            <Link to="/signup">
+              <NavbarButton variant="primary">
+                Join Auction
+              </NavbarButton>
+            </Link>
           </div>
         </NavBody>
 
@@ -79,20 +88,30 @@ export function ResizableNavbar() {
               </button>
             ))}
             <div className="flex w-full flex-col gap-4">
-              <NavbarButton
+              <Link 
+                to="/login" 
                 onClick={() => setIsMobileMenuOpen(false)}
-                variant="secondary"
                 className="w-full"
               >
-                Login
-              </NavbarButton>
-              <NavbarButton
+                <NavbarButton
+                  variant="secondary"
+                  className="w-full"
+                >
+                  Login
+                </NavbarButton>
+              </Link>
+              <Link 
+                to="/signup" 
                 onClick={() => setIsMobileMenuOpen(false)}
-                variant="primary"
                 className="w-full"
               >
-                Join Auction
-              </NavbarButton>
+                <NavbarButton
+                  variant="primary"
+                  className="w-full"
+                >
+                  Join Auction
+                </NavbarButton>
+              </Link>
             </div>
           </MobileNavMenu>
         </MobileNav>
