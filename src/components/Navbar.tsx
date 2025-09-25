@@ -15,8 +15,6 @@ export default function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const { user, isAuthenticated, logout } = useAuth();
 
-  console.log('Navbar render - isAuthenticated:', isAuthenticated, 'user:', user);
-
   useEffect(() => {
     const handleScroll = () => {
       const scrollTop = window.scrollY;

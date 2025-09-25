@@ -94,12 +94,11 @@ class ApiClient {
       body: JSON.stringify(credentials),
     });
 
-    console.log('Login response:', response);
-    console.log('Response data:', response.data);
-
     if (response.data) {
       this.setToken(response.data.token);
-      console.log('Token set:', response.data.token);
+      if (response.data.refreshToken) {
+        localStorage.setItem('refreshToken', response.data.refreshToken);
+      }
     }
 
     return response.data!;
@@ -113,6 +112,9 @@ class ApiClient {
 
     if (response.data) {
       this.setToken(response.data.token);
+      if (response.data.refreshToken) {
+        localStorage.setItem('refreshToken', response.data.refreshToken);
+      }
     }
 
     return response.data!;

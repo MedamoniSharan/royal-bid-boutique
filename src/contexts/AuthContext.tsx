@@ -46,11 +46,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const login = async (credentials: LoginCredentials) => {
     setIsLoading(true);
     try {
-      console.log('AuthContext: Starting login...');
       const response = await apiClient.login(credentials);
-      console.log('AuthContext: Login response received:', response);
       setUser(response.user);
-      console.log('AuthContext: User set to:', response.user);
     } catch (error) {
       console.error('Login error:', error);
       throw error; // Re-throw to let the calling component handle it
