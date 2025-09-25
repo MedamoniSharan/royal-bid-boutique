@@ -1,5 +1,5 @@
 import express from 'express';
-wwimport { body, query, param } from 'express-validator';
+import { body, query, param } from 'express-validator';
 import {
   getDashboardStats,
   getUsers,

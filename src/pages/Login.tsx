@@ -3,26 +3,53 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Mail, Phone, ArrowLeft } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Mail, Phone, ArrowLeft, Eye, EyeOff } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { Boxes } from "@/components/ui/background-boxes";
+import { useAuthForm } from "@/hooks/useAuthForm";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Login() {
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const { handleLogin, error, setError, isLoading } = useAuthForm();
+  
   const [formData, setFormData] = useState({
     email: "",
-    phone: "(775) 351-6501",
     password: ""
   });
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+    // Clear error when user starts typing
+    if (error) setError(null);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle login submission here
-    console.log("Login submitted:", formData);
+    
+    if (!formData.email || !formData.password) {
+      setError("Please fill in all fields");
+      return;
+    }
+
+    try {
+      await handleLogin(formData);
+      toast({
+        title: "Login successful",
+        description: "Welcome back!",
+      });
+      navigate("/");
+    } catch (err) {
+      // Error is already handled by useAuthForm
+      toast({
+        title: "Login failed",
+        description: error || "An error occurred during login",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -66,6 +93,13 @@ export default function Login() {
           Sign in to your account
         </h2>
 
+        {/* Error Message */}
+        {error && (
+          <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
+            <p className="text-red-400 text-sm">{error}</p>
+          </div>
+        )}
+
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Email */}
@@ -82,29 +116,8 @@ export default function Login() {
                 onChange={(e) => handleInputChange("email", e.target.value)}
                 className="bg-gray-800/50 border-gray-600/50 text-white placeholder-gray-400 focus:border-gold focus:ring-gold/20 pl-10"
                 placeholder="Enter your email"
-              />
-            </div>
-          </div>
-
-          {/* Phone Number */}
-          <div className="space-y-2">
-            <Label htmlFor="phone" className="text-white text-sm font-medium">
-              Phone Number
-            </Label>
-            <div className="relative">
-              <div className="absolute left-3 top-1/2 transform -translate-y-1/2 flex items-center gap-1">
-                <div className="w-4 h-3 bg-gradient-to-r from-red-500 to-blue-500 rounded-sm flex items-center justify-center text-xs text-white font-bold">
-                  🇺🇸
-                </div>
-                <Phone className="w-3 h-3 text-gray-400" />
-              </div>
-              <Input
-                id="phone"
-                type="tel"
-                value={formData.phone}
-                onChange={(e) => handleInputChange("phone", e.target.value)}
-                className="bg-gray-800/50 border-gray-600/50 text-white placeholder-gray-400 focus:border-gold focus:ring-gold/20 pl-16"
-                placeholder="(775) 351-6501"
+                required
+                disabled={isLoading}
               />
             </div>
           </div>
@@ -114,22 +127,35 @@ export default function Login() {
             <Label htmlFor="password" className="text-white text-sm font-medium">
               Password
             </Label>
-            <Input
-              id="password"
-              type="password"
-              value={formData.password}
-              onChange={(e) => handleInputChange("password", e.target.value)}
-              className="bg-gray-800/50 border-gray-600/50 text-white placeholder-gray-400 focus:border-gold focus:ring-gold/20"
-              placeholder="Enter your password"
-            />
+            <div className="relative">
+              <Input
+                id="password"
+                type={showPassword ? "text" : "password"}
+                value={formData.password}
+                onChange={(e) => handleInputChange("password", e.target.value)}
+                className="bg-gray-800/50 border-gray-600/50 text-white placeholder-gray-400 focus:border-gold focus:ring-gold/20 pr-10"
+                placeholder="Enter your password"
+                required
+                disabled={isLoading}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white"
+                disabled={isLoading}
+              >
+                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
           </div>
 
           {/* Submit Button */}
           <Button
             type="submit"
-            className="w-full bg-white text-black hover:bg-gray-100 font-medium py-3 rounded-lg transition-colors"
+            className="w-full bg-white text-black hover:bg-gray-100 font-medium py-3 rounded-lg transition-colors disabled:opacity-50"
+            disabled={isLoading}
           >
-            Sign in
+            {isLoading ? "Signing in..." : "Sign in"}
           </Button>
         </form>
 

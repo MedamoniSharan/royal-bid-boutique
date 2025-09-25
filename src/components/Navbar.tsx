@@ -1,9 +1,21 @@
 import { Button } from "@/components/ui/button";
-import { Moon, Menu } from "lucide-react";
+import { Moon, Menu, User, LogOut, Settings } from "lucide-react";
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export default function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
+  const { user, isAuthenticated, logout } = useAuth();
+
+  console.log('Navbar render - isAuthenticated:', isAuthenticated, 'user:', user);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -14,6 +26,14 @@ export default function Navbar() {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
+  };
 
   return (
     <nav className={`fixed top-4 z-50 transition-all duration-300 ease-in-out ${
@@ -56,10 +76,60 @@ export default function Navbar() {
 
             {/* Right Actions */}
             <div className="flex items-center gap-3">
-              {/* Join Auction button */}
-              <Button className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-full text-sm font-medium hover:scale-105 transition-all duration-200 shadow-lg hover:shadow-blue-500/25">
-                Join Auction
-              </Button>
+              {isAuthenticated ? (
+                <>
+                  {/* User Dropdown */}
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" size="sm" className="w-10 h-10 rounded-full border-gray-600 hover:bg-gray-800 hover:scale-105 transition-all duration-200">
+                        <User className="w-4 h-4 text-white" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-56 bg-gray-800 border-gray-600">
+                      <div className="px-3 py-2">
+                        <p className="text-sm font-medium text-white">
+                          {user?.firstName} {user?.lastName}
+                        </p>
+                        <p className="text-xs text-gray-400">{user?.email}</p>
+                      </div>
+                      <DropdownMenuSeparator className="bg-gray-600" />
+                      <DropdownMenuItem className="text-gray-300 hover:bg-gray-700 hover:text-white">
+                        <Settings className="mr-2 h-4 w-4" />
+                        Settings
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+
+                  {/* Logout Button */}
+                  <Button 
+                    variant="outline" 
+                    onClick={handleLogout}
+                    className="border-red-600 hover:bg-red-600 text-red-400 hover:text-white px-4 py-2 rounded-full text-sm font-medium hover:scale-105 transition-all duration-200"
+                  >
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Logout
+                  </Button>
+
+                  {/* Join Auction button */}
+                  <Button className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-full text-sm font-medium hover:scale-105 transition-all duration-200 shadow-lg hover:shadow-blue-500/25">
+                    Join Auction
+                  </Button>
+                </>
+              ) : (
+                <>
+                  {/* Login/Signup buttons */}
+                  <Link to="/login">
+                    <Button variant="outline" className="border-gray-600 hover:bg-gray-800 text-white px-4 py-2 rounded-full text-sm font-medium hover:scale-105 transition-all duration-200">
+                      Sign In
+                    </Button>
+                  </Link>
+                  <Link to="/signup">
+                    <Button className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-full text-sm font-medium hover:scale-105 transition-all duration-200 shadow-lg hover:shadow-blue-500/25">
+                      Sign Up
+                    </Button>
+                  </Link>
+                </>
+              )}
               
               {/* Theme toggle */}
               <Button variant="outline" size="sm" className="w-10 h-10 rounded-full border-gray-600 hover:bg-gray-800 hover:scale-105 transition-all duration-200">

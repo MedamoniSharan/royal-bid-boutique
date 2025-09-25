@@ -7,6 +7,7 @@ import rateLimit from 'express-rate-limit';
 import mongoSanitize from 'express-mongo-sanitize';
 import hpp from 'hpp';
 import xss from 'xss-clean';
+import session from 'express-session';
 import dotenv from 'dotenv';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
@@ -36,7 +37,7 @@ const app = express();
 const server = createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:3000'],
+    origin: process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:8080', 'http://localhost:3000', 'http://localhost:5173'],
     methods: ['GET', 'POST']
   }
 });
@@ -44,11 +45,17 @@ const io = new Server(server, {
 // Connect to database
 connectDB();
 
-// Security middleware
-app.use(helmet());
+// CORS middleware (before helmet to avoid conflicts)
 app.use(cors({
-  origin: process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:3000'],
-  credentials: true
+  origin: process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:8080', 'http://localhost:3000', 'http://localhost:5173'],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
+// Security middleware
+app.use(helmet({
+  crossOriginEmbedderPolicy: false
 }));
 
 // Rate limiting
@@ -64,6 +71,18 @@ app.use('/api/', limiter);
 // Body parsing middleware
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Session middleware
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'fallback-session-secret',
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    secure: process.env.NODE_ENV === 'production',
+    httpOnly: true,
+    maxAge: 15 * 60 * 1000 // 15 minutes
+  }
+}));
 
 // Data sanitization against NoSQL query injection
 app.use(mongoSanitize());

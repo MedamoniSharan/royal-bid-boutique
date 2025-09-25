@@ -1,5 +1,5 @@
 import express from 'express';
-wimport { body, query, param } from 'express-validator';
+import { body, query, param } from 'express-validator';
 import {
   getNotifications,
   getNotification,

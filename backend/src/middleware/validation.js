@@ -50,7 +50,9 @@ export const validateUserRegistration = [
   
   body('phone')
     .optional()
-    .isMobilePhone()
+    .isLength({ min: 10, max: 15 })
+    .withMessage('Phone number must be between 10 and 15 characters')
+    .matches(/^[\+]?[0-9\s\-\(\)]+$/)
     .withMessage('Please provide a valid phone number'),
   
   handleValidationErrors

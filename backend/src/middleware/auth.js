@@ -187,6 +187,11 @@ export const optionalAuth = async (req, res, next) => {
 
 // Rate limiting for authentication attempts
 export const authRateLimit = (req, res, next) => {
+  // Initialize session if it doesn't exist
+  if (!req.session) {
+    req.session = {};
+  }
+  
   const key = `auth_attempts_${req.ip}`;
   const attempts = req.session.authAttempts || 0;
   const lastAttempt = req.session.lastAuthAttempt || 0;
