@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { AnimatedButton } from "@/components/reactbits/AnimatedButton";
 import { HoverCard } from "@/components/reactbits/HoverCard";
 import { ShimmerCard } from "@/components/reactbits/ShimmerCard";
@@ -43,10 +44,52 @@ const auctionItems = [
     category: "Art",
     image: "https://images.unsplash.com/photo-1541961017774-22349e4a1262?w=400&h=400&fit=crop",
     status: "upcoming"
+  },
+  {
+    id: 4,
+    title: "Abstract Oil mallllasd",
+    description: "Original Contemporary Art Piece",
+    currentBid: 3200,
+    nextBid: 3500,
+    bids: 12,
+    timeLeft: "1d 8h",
+    category: "Art",
+    image: "https://images.unsplash.com/photo-1541961017774-22349e4a1262?w=400&h=400&fit=crop",
+    status: "upcoming"
+  },
+  {
+    id: 5,
+    title: "Abstract Oil Painting",
+    description: "Original Contemporary Art Piece",
+    currentBid: 3200,
+    nextBid: 3500,
+    bids: 12,
+    timeLeft: "1d 8h",
+    category: "Art",
+    image: "https://images.unsplash.com/photo-1541961017774-22349e4a1262?w=400&h=400&fit=crop",
+    status: "upcoming"
+  },
+  {
+    id: 6,
+    title: "Abstract Oil Painting",
+    description: "Original Contemporary Art Piece",
+    currentBid: 3200,
+    nextBid: 3500,
+    bids: 12,
+    timeLeft: "1d 8h",
+    category: "Art",
+    image: "https://images.unsplash.com/photo-1541961017774-22349e4a1262?w=400&h=400&fit=crop",
+    status: "upcoming"
   }
+  
 ];
 
 export default function AuctionSection() {
+  const [showAll, setShowAll] = useState(false);
+  
+  // Show only 3 items by default, or all items when showAll is true
+  const displayedItems = showAll ? auctionItems : auctionItems.slice(0, 3);
+
   return (
     <section className="py-20 bg-background">
       <div className="max-w-7xl mx-auto px-4">
@@ -57,7 +100,7 @@ export default function AuctionSection() {
         
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {auctionItems.map((item, index) => (
+          {displayedItems.map((item, index) => (
             <ShimmerCard key={item.id} className="group border-border/50" shimmerColor="gold">
               <div className="p-0">
                 <div className="relative overflow-hidden rounded-t-lg">
@@ -129,8 +172,13 @@ export default function AuctionSection() {
         </div>
 
         <div className="text-center mt-12">
-          <AnimatedButton size="lg" variant="outline" className="px-8 py-4">
-            View All Auctions
+          <AnimatedButton 
+            size="lg" 
+            variant="outline" 
+            className="px-8 py-4"
+            onClick={() => setShowAll(!showAll)}
+          >
+            {showAll ? "Show Less" : "View All Auctions"}
           </AnimatedButton>
         </div>
       </div>

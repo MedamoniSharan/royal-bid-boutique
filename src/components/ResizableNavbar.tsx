@@ -68,33 +68,25 @@ export function ResizableNavbar() {
           <div className="flex items-center gap-4">
             {isAuthenticated ? (
               <>
-                {/* User Dropdown */}
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <NavbarButton variant="secondary" className="flex items-center gap-2">
-                      <User className="w-4 h-4" />
-                      {user?.firstName}
-                    </NavbarButton>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-56">
-                    <div className="px-3 py-2">
-                      <p className="text-sm font-medium">
-                        {user?.firstName} {user?.lastName}
-                      </p>
-                      <p className="text-xs text-muted-foreground">{user?.email}</p>
-                    </div>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={handleLogout} className="text-red-600">
-                      <LogOut className="mr-2 h-4 w-4" />
-                      Logout
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                {/* User info and logout button */}
+                <div className="flex items-center gap-2 text-white">
+                  <User className="w-4 h-4" />
+                  <span className="text-sm">{user?.firstName}</span>
+                </div>
+                
+                <NavbarButton 
+                  variant="secondary" 
+                  onClick={handleLogout}
+                  className="text-red-600 hover:text-red-700"
+                >
+                  <LogOut className="w-4 h-4 mr-2" />
+                  Logout
+                </NavbarButton>
 
                 {/* Join Auction button */}
-                <NavbarButton variant="primary">
+                {/* <NavbarButton variant="primary">
                   Join Auction
-                </NavbarButton>
+                </NavbarButton> */}
               </>
             ) : (
               <>
@@ -143,9 +135,12 @@ export function ResizableNavbar() {
               {isAuthenticated ? (
                 <>
                   <div className="px-3 py-2 border-b">
-                    <p className="text-sm font-medium">
-                      {user?.firstName} {user?.lastName}
-                    </p>
+                    <div className="flex items-center gap-2 mb-2">
+                      <User className="w-4 h-4" />
+                      <p className="text-sm font-medium">
+                        {user?.firstName} {user?.lastName}
+                      </p>
+                    </div>
                     <p className="text-xs text-muted-foreground">{user?.email}</p>
                   </div>
                   <NavbarButton
@@ -156,7 +151,7 @@ export function ResizableNavbar() {
                   </NavbarButton>
                   <NavbarButton
                     variant="secondary"
-                    className="w-full text-red-600"
+                    className="w-full text-red-600 hover:text-red-700"
                     onClick={() => {
                       handleLogout();
                       setIsMobileMenuOpen(false);
