@@ -151,13 +151,12 @@ export const sendEmail = async (to, templateName, data = {}) => {
     }
     
     let subject = template.subject;
-    let html = template.template;
+    let html = template.template(data);
     
-    // Replace placeholders in subject and template
+    // Replace placeholders in subject if any remain
     Object.keys(data).forEach(key => {
       const placeholder = new RegExp(`\\{${key}\\}`, 'g');
       subject = subject.replace(placeholder, data[key]);
-      html = html.replace(placeholder, data[key]);
     });
     
     const mailOptions = {
@@ -187,13 +186,12 @@ export const sendBulkEmail = async (recipients, templateName, data = {}) => {
     }
     
     let subject = template.subject;
-    let html = template.template;
+    let html = template.template(data);
     
-    // Replace placeholders
+    // Replace placeholders in subject if any remain
     Object.keys(data).forEach(key => {
       const placeholder = new RegExp(`\\{${key}\\}`, 'g');
       subject = subject.replace(placeholder, data[key]);
-      html = html.replace(placeholder, data[key]);
     });
     
     const mailOptions = {

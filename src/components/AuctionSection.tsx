@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { AnimatedButton } from "@/components/reactbits/AnimatedButton";
 import { HoverCard } from "@/components/reactbits/HoverCard";
 import { ShimmerCard } from "@/components/reactbits/ShimmerCard";
@@ -7,6 +8,7 @@ import { GlowButton } from "@/components/reactbits/GlowButton";
 import { Badge } from "@/components/ui/badge";
 import { Clock, Eye, Gavel, TrendingUp } from "lucide-react";
 import { SparklesText } from "@/components/ui/sparkles-text";
+import { useAuth } from "@/contexts/AuthContext";
 
 const auctionItems = [
   {
@@ -86,9 +88,19 @@ const auctionItems = [
 
 export default function AuctionSection() {
   const [showAll, setShowAll] = useState(false);
+  const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
   
   // Show only 3 items by default, or all items when showAll is true
   const displayedItems = showAll ? auctionItems : auctionItems.slice(0, 3);
+
+  const handleViewDetails = () => {
+    if (isAuthenticated) {
+      navigate('/dashboard');
+    } else {
+      navigate('/login');
+    }
+  };
 
   return (
     <section className="py-20 bg-background">
@@ -162,7 +174,11 @@ export default function AuctionSection() {
                   <Gavel className="w-4 h-4 mr-2" />
                   Place Bid
                 </GlowButton>
-                <AnimatedButton variant="outline" className="w-full">
+                <AnimatedButton 
+                  variant="outline" 
+                  className="w-full"
+                  onClick={handleViewDetails}
+                >
                   <TrendingUp className="w-4 h-4 mr-2" />
                   View Details
                 </AnimatedButton>
