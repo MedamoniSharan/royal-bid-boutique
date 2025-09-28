@@ -94,11 +94,19 @@ export default function AuctionSection() {
   // Show only 3 items by default, or all items when showAll is true
   const displayedItems = showAll ? auctionItems : auctionItems.slice(0, 3);
 
-  const handleViewDetails = () => {
+  const handleViewDetails = (auctionId: number) => {
     if (isAuthenticated) {
-      navigate('/dashboard');
+      navigate('/dashboard', { state: { section: 'auction', auctionId } });
     } else {
-      navigate('/login');
+      navigate('/login', { state: { returnTo: '/dashboard', section: 'auction', auctionId } });
+    }
+  };
+
+  const handlePlaceBid = (auctionId: number) => {
+    if (isAuthenticated) {
+      navigate('/dashboard', { state: { section: 'auction', auctionId } });
+    } else {
+      navigate('/login', { state: { returnTo: '/dashboard', section: 'auction', auctionId } });
     }
   };
 
@@ -170,14 +178,18 @@ export default function AuctionSection() {
               </div>
 
               <div className="p-6 pt-0 space-y-3">
-                <GlowButton className="w-full" glowColor="crimson">
+                <GlowButton 
+                  className="w-full" 
+                  glowColor="crimson"
+                  onClick={() => handlePlaceBid(item.id)}
+                >
                   <Gavel className="w-4 h-4 mr-2" />
                   Place Bid
                 </GlowButton>
                 <AnimatedButton 
                   variant="outline" 
                   className="w-full"
-                  onClick={handleViewDetails}
+                  onClick={() => handleViewDetails(item.id)}
                 >
                   <TrendingUp className="w-4 h-4 mr-2" />
                   View Details

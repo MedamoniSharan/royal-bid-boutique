@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -28,10 +29,18 @@ type UserMode = 'buy' | 'sell';
 export default function Dashboard() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [activeSection, setActiveSection] = useState<SidebarSection>('auction');
   const [userMode, setUserMode] = useState<UserMode>('buy');
   const [showProductForm, setShowProductForm] = useState(false);
   const [selectedProductId, setSelectedProductId] = useState<number | null>(null);
+
+  // Handle navigation state from various sections
+  useEffect(() => {
+    if (location.state?.section) {
+      setActiveSection(location.state.section);
+    }
+  }, [location.state]);
 
   const handleLogout = async () => {
     await logout();

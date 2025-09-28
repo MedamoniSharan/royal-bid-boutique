@@ -57,9 +57,9 @@ export default function RetailSection() {
 
   const handleAddToCart = (productId: number) => {
     if (isAuthenticated) {
-      navigate('/dashboard');
+      navigate('/dashboard', { state: { section: 'retail', productId } });
     } else {
-      navigate('/login');
+      navigate('/login', { state: { returnTo: '/dashboard', section: 'retail', productId } });
     }
   };
 

@@ -3,6 +3,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Lock, Mail, Shield, Crown } from "lucide-react";
 import antiPiecesImage from "@/assets/anti-pieces.jpg";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 
 const antiPieces = [
   {
@@ -38,6 +40,25 @@ const antiPieces = [
 ];
 
 export default function AntiPiecesSection() {
+  const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
+
+  const handleInquiry = (pieceId: number) => {
+    if (isAuthenticated) {
+      navigate('/dashboard', { state: { section: 'anti-pieces', pieceId } });
+    } else {
+      navigate('/login', { state: { returnTo: '/dashboard', section: 'anti-pieces', pieceId } });
+    }
+  };
+
+  const handleRequestAccess = () => {
+    if (isAuthenticated) {
+      navigate('/dashboard', { state: { section: 'anti-pieces' } });
+    } else {
+      navigate('/login', { state: { returnTo: '/dashboard', section: 'anti-pieces' } });
+    }
+  };
+
   return (
     <section className="py-20 bg-charcoal text-white">
       <div className="max-w-7xl mx-auto px-4">
@@ -86,7 +107,10 @@ export default function AntiPiecesSection() {
                 These pieces represent the pinnacle of human achievement, artistic mastery, and historical significance. 
                 Each item undergoes rigorous authentication and provenance verification.
               </p>
-              <Button className="bg-gold text-charcoal hover:bg-gold-light px-6 py-3">
+              <Button 
+                className="bg-gold text-charcoal hover:bg-gold-light px-6 py-3"
+                onClick={handleRequestAccess}
+              >
                 Request Access
               </Button>
             </div>
@@ -134,6 +158,7 @@ export default function AntiPiecesSection() {
                       <Button 
                         size="sm" 
                         className="bg-gold/20 text-gold border border-gold/50 hover:bg-gold hover:text-charcoal"
+                        onClick={() => handleInquiry(piece.id)}
                       >
                         <Mail className="w-4 h-4 mr-2" />
                         Inquire
@@ -155,10 +180,17 @@ export default function AntiPiecesSection() {
             Join our exclusive collectors' circle to view the complete catalog.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button className="bg-gold text-charcoal hover:bg-gold-light px-8 py-3">
+            <Button 
+              className="bg-gold text-charcoal hover:bg-gold-light px-8 py-3"
+              onClick={handleRequestAccess}
+            >
               Apply for Membership
             </Button>
-            <Button variant="outline" className="border-gold text-gold hover:bg-gold hover:text-charcoal px-8 py-3">
+            <Button 
+              variant="outline" 
+              className="border-gold text-gold hover:bg-gold hover:text-charcoal px-8 py-3"
+              onClick={handleRequestAccess}
+            >
               Contact Curator
             </Button>
           </div>
