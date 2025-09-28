@@ -266,12 +266,12 @@ export const validateBidCreation = [
 
 // Product validation rules
 export const validateProductCreation = [
-  body('name')
+  body('title')
     .trim()
     .notEmpty()
-    .withMessage('Product name is required')
+    .withMessage('Product title is required')
     .isLength({ min: 2, max: 200 })
-    .withMessage('Product name must be between 2 and 200 characters'),
+    .withMessage('Product title must be between 2 and 200 characters'),
   
   body('description')
     .trim()
@@ -281,17 +281,48 @@ export const validateProductCreation = [
     .withMessage('Description must be between 10 and 2000 characters'),
   
   body('category')
-    .isMongoId()
-    .withMessage('Valid category ID is required'),
+    .isIn(['Watches', 'Collectibles', 'Art', 'Jewelry', 'Electronics', 'Fashion', 'Antiques', 'Books', 'Sports', 'Home & Garden'])
+    .withMessage('Valid category is required'),
+  
+  body('price')
+    .isFloat({ min: 0.01 })
+    .withMessage('Price must be at least $0.01'),
+  
+  body('stocks')
+    .isInt({ min: 0 })
+    .withMessage('Stocks must be a non-negative integer'),
+  
+  body('discount')
+    .optional()
+    .isFloat({ min: 0, max: 100 })
+    .withMessage('Discount must be between 0 and 100'),
   
   body('condition')
-    .isIn(['new', 'like_new', 'good', 'fair', 'poor'])
+    .isIn(['New', 'Like New', 'Excellent', 'Good', 'Fair', 'Poor'])
     .withMessage('Valid condition is required'),
   
-  body('authenticity')
+  body('auctionType')
+    .isIn(['Auction', 'Retail', 'Anti-Piece'])
+    .withMessage('Valid listing type is required'),
+  
+  body('startingBid')
     .optional()
-    .isIn(['authentic', 'replica', 'unknown'])
-    .withMessage('Valid authenticity status is required'),
+    .isFloat({ min: 0.01 })
+    .withMessage('Starting bid must be at least $0.01'),
+  
+  body('auctionEndDate')
+    .optional()
+    .isISO8601()
+    .withMessage('Valid auction end date is required')
+    .custom((value, { req }) => {
+      if (req.body.auctionType === 'Auction' && !value) {
+        throw new Error('Auction end date is required for auction listings');
+      }
+      if (value && new Date(value) <= new Date()) {
+        throw new Error('Auction end date must be in the future');
+      }
+      return true;
+    }),
   
   body('brand')
     .optional()
@@ -305,21 +336,20 @@ export const validateProductCreation = [
     .isLength({ max: 100 })
     .withMessage('Model cannot exceed 100 characters'),
   
-  body('estimatedValue.min')
+  body('authenticity')
     .optional()
-    .isFloat({ min: 0 })
-    .withMessage('Minimum estimated value must be non-negative'),
+    .isIn(['authentic', 'replica', 'unknown'])
+    .withMessage('Valid authenticity status is required'),
   
-  body('estimatedValue.max')
+  body('tags')
     .optional()
-    .isFloat({ min: 0 })
-    .withMessage('Maximum estimated value must be non-negative')
-    .custom((value, { req }) => {
-      if (value && req.body.estimatedValue?.min && value < req.body.estimatedValue.min) {
-        throw new Error('Maximum estimated value must be greater than minimum');
-      }
-      return true;
-    }),
+    .isArray()
+    .withMessage('Tags must be an array'),
+  
+  body('images')
+    .optional()
+    .isArray()
+    .withMessage('Images must be an array'),
   
   handleValidationErrors
 ];

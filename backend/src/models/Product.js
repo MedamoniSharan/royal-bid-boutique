@@ -1,11 +1,12 @@
 import mongoose from 'mongoose';
 
 const productSchema = new mongoose.Schema({
-  name: {
+  // Basic Information
+  title: {
     type: String,
-    required: [true, 'Product name is required'],
+    required: [true, 'Product title is required'],
     trim: true,
-    maxlength: [200, 'Product name cannot exceed 200 characters']
+    maxlength: [200, 'Product title cannot exceed 200 characters']
   },
   description: {
     type: String,
@@ -13,14 +14,62 @@ const productSchema = new mongoose.Schema({
     maxlength: [2000, 'Description cannot exceed 2000 characters']
   },
   category: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Category',
-    required: [true, 'Category is required']
+    type: String,
+    required: [true, 'Category is required'],
+    enum: ['Watches', 'Collectibles', 'Art', 'Jewelry', 'Electronics', 'Fashion', 'Antiques', 'Books', 'Sports', 'Home & Garden']
   },
-  subcategory: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Category'
+  
+  // Pricing & Inventory
+  price: {
+    type: Number,
+    required: [true, 'Price is required'],
+    min: [0, 'Price must be non-negative']
   },
+  stocks: {
+    type: Number,
+    required: [true, 'Stocks is required'],
+    min: [0, 'Stocks must be non-negative']
+  },
+  discount: {
+    type: Number,
+    default: 0,
+    min: [0, 'Discount cannot be negative'],
+    max: [100, 'Discount cannot exceed 100%']
+  },
+  
+  // Product Details
+  condition: {
+    type: String,
+    required: [true, 'Product condition is required'],
+    enum: ['New', 'Like New', 'Excellent', 'Good', 'Fair', 'Poor']
+  },
+  
+  // Listing Type
+  auctionType: {
+    type: String,
+    required: [true, 'Listing type is required'],
+    enum: ['Auction', 'Retail', 'Anti-Piece']
+  },
+  
+  // Auction Specific Fields
+  startingBid: {
+    type: Number,
+    min: [0, 'Starting bid must be non-negative']
+  },
+  auctionEndDate: {
+    type: Date,
+    validate: {
+      validator: function(value) {
+        if (this.auctionType === 'Auction' && !value) {
+          return false;
+        }
+        return true;
+      },
+      message: 'Auction end date is required for auction listings'
+    }
+  },
+  
+  // Additional Product Information
   brand: {
     type: String,
     trim: true,
@@ -38,30 +87,19 @@ const productSchema = new mongoose.Schema({
     trim: true,
     uppercase: true
   },
-  condition: {
-    type: String,
-    enum: ['new', 'like_new', 'good', 'fair', 'poor'],
-    required: [true, 'Product condition is required']
-  },
   authenticity: {
     type: String,
     enum: ['authentic', 'replica', 'unknown'],
     default: 'unknown'
   },
-  dimensions: {
-    length: Number,
-    width: Number,
-    height: Number,
-    weight: Number,
-    unit: {
-      type: String,
-      enum: ['cm', 'in', 'kg', 'lbs'],
-      default: 'cm'
-    }
+  // Seller Information
+  seller: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: [true, 'Seller is required']
   },
-  materials: [String],
-  colors: [String],
-  sizes: [String],
+  
+  // Media
   images: [{
     url: {
       type: String,
@@ -77,76 +115,15 @@ const productSchema = new mongoose.Schema({
       default: 0
     }
   }],
-  specifications: [{
-    name: {
-      type: String,
-      required: true
-    },
-    value: {
-      type: String,
-      required: true
-    },
-    unit: String
-  }],
-  features: [String],
+  
+  // Additional Information
   tags: [String],
-  estimatedValue: {
-    min: Number,
-    max: Number,
-    currency: {
-      type: String,
-      default: 'USD'
-    }
-  },
-  provenance: {
-    origin: String,
-    history: String,
-    documentation: [String],
-    certificates: [String]
-  },
-  warranty: {
-    hasWarranty: {
-      type: Boolean,
-      default: false
-    },
-    duration: String,
-    terms: String,
-    provider: String
-  },
-  returnPolicy: {
-    allowed: {
-      type: Boolean,
-      default: false
-    },
-    duration: String,
-    conditions: String
-  },
-  shipping: {
-    weight: Number,
-    dimensions: {
-      length: Number,
-      width: Number,
-      height: Number
-    },
-    fragile: {
-      type: Boolean,
-      default: false
-    },
-    requiresSpecialHandling: {
-      type: Boolean,
-      default: false
-    },
-    restrictions: [String]
-  },
-  seo: {
-    metaTitle: String,
-    metaDescription: String,
-    keywords: [String]
-  },
+  
+  // Status & Metadata
   status: {
     type: String,
     enum: ['active', 'inactive', 'archived', 'pending_review'],
-    default: 'active'
+    default: 'pending_review'
   },
   isFeatured: {
     type: Boolean,
@@ -172,31 +149,38 @@ productSchema.virtual('primaryImage').get(function() {
   return primaryImg || this.images[0] || null;
 });
 
-// Virtual for full dimensions string
-productSchema.virtual('dimensionsString').get(function() {
-  if (!this.dimensions.length || !this.dimensions.width || !this.dimensions.height) {
-    return null;
+// Virtual for discounted price
+productSchema.virtual('discountedPrice').get(function() {
+  if (this.discount > 0) {
+    return this.price * (1 - this.discount / 100);
   }
-  return `${this.dimensions.length} × ${this.dimensions.width} × ${this.dimensions.height} ${this.dimensions.unit}`;
+  return this.price;
 });
 
-// Virtual for estimated value range
-productSchema.virtual('estimatedValueRange').get(function() {
-  if (!this.estimatedValue.min || !this.estimatedValue.max) {
-    return null;
+// Virtual for auction status
+productSchema.virtual('auctionStatus').get(function() {
+  if (this.auctionType === 'Auction' && this.auctionEndDate) {
+    const now = new Date();
+    if (now > this.auctionEndDate) {
+      return 'ended';
+    }
+    return 'active';
   }
-  return `$${this.estimatedValue.min} - $${this.estimatedValue.max}`;
+  return null;
 });
 
 // Indexes for better performance
-productSchema.index({ name: 'text', description: 'text', tags: 'text' });
+productSchema.index({ title: 'text', description: 'text', tags: 'text' });
 productSchema.index({ category: 1 });
 productSchema.index({ brand: 1 });
 productSchema.index({ condition: 1 });
+productSchema.index({ auctionType: 1 });
 productSchema.index({ status: 1, isActive: 1 });
 productSchema.index({ isFeatured: 1 });
 productSchema.index({ viewCount: -1 });
 productSchema.index({ createdAt: -1 });
+productSchema.index({ seller: 1 });
+productSchema.index({ auctionEndDate: 1 });
 
 // Pre-save middleware to generate SKU if not provided
 productSchema.pre('save', function(next) {
@@ -223,7 +207,7 @@ productSchema.methods.getRelatedProducts = function(limit = 5) {
     isActive: true
   })
   .limit(limit)
-  .select('name images estimatedValue condition');
+  .select('title images price condition auctionType');
 };
 
 // Method to check if product is available for auction
@@ -243,7 +227,7 @@ productSchema.statics.searchProducts = function(query, filters = {}) {
   if (query) {
     searchQuery.$and.push({
       $or: [
-        { name: { $regex: query, $options: 'i' } },
+        { title: { $regex: query, $options: 'i' } },
         { description: { $regex: query, $options: 'i' } },
         { brand: { $regex: query, $options: 'i' } },
         { tags: { $in: [new RegExp(query, 'i')] } }
@@ -264,10 +248,14 @@ productSchema.statics.searchProducts = function(query, filters = {}) {
     searchQuery.$and.push({ condition: filters.condition });
   }
 
+  if (filters.auctionType) {
+    searchQuery.$and.push({ auctionType: filters.auctionType });
+  }
+
   if (filters.minPrice || filters.maxPrice) {
     const priceFilter = {};
-    if (filters.minPrice) priceFilter['estimatedValue.min'] = { $gte: filters.minPrice };
-    if (filters.maxPrice) priceFilter['estimatedValue.max'] = { $lte: filters.maxPrice };
+    if (filters.minPrice) priceFilter.price = { $gte: filters.minPrice };
+    if (filters.maxPrice) priceFilter.price = { $lte: filters.maxPrice };
     searchQuery.$and.push(priceFilter);
   }
 
@@ -281,7 +269,7 @@ productSchema.statics.getFeaturedProducts = function(limit = 10) {
     status: 'active',
     isActive: true
   })
-  .populate('category', 'name')
+  .populate('seller', 'firstName lastName email')
   .sort({ createdAt: -1 })
   .limit(limit);
 };
@@ -292,19 +280,31 @@ productSchema.statics.getPopularProducts = function(limit = 10) {
     status: 'active',
     isActive: true
   })
-  .populate('category', 'name')
+  .populate('seller', 'firstName lastName email')
   .sort({ viewCount: -1 })
   .limit(limit);
 };
 
 // Static method to get products by category
-productSchema.statics.getByCategory = function(categoryId, limit = 20) {
+productSchema.statics.getByCategory = function(category, limit = 20) {
   return this.find({
-    category: categoryId,
+    category: category,
     status: 'active',
     isActive: true
   })
-  .populate('category', 'name')
+  .populate('seller', 'firstName lastName email')
+  .sort({ createdAt: -1 })
+  .limit(limit);
+};
+
+// Static method to get products by auction type
+productSchema.statics.getByAuctionType = function(auctionType, limit = 20) {
+  return this.find({
+    auctionType: auctionType,
+    status: 'active',
+    isActive: true
+  })
+  .populate('seller', 'firstName lastName email')
   .sort({ createdAt: -1 })
   .limit(limit);
 };
