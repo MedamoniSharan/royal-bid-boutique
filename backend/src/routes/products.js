@@ -96,7 +96,6 @@ router.post('/:id/view',
 // Protected routes
 router.post('/',
   protect,
-  authorize('seller', 'admin'),
   validateProductCreation,
   createProduct
 );

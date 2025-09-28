@@ -35,6 +35,85 @@ export interface RegisterCredentials {
   phone?: string;
 }
 
+export interface ProductImage {
+  url: string;
+  alt?: string;
+  isPrimary?: boolean;
+  order?: number;
+}
+
+export interface Product {
+  _id: string;
+  title: string;
+  description: string;
+  category: string;
+  price: number;
+  stocks: number;
+  discount: number;
+  condition: string;
+  auctionType: 'Auction' | 'Retail' | 'Anti-Piece';
+  startingBid?: number;
+  auctionEndDate?: string;
+  brand?: string;
+  model?: string;
+  authenticity: 'authentic' | 'replica' | 'unknown';
+  tags: string[];
+  images: ProductImage[];
+  seller: {
+    _id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+  };
+  status: 'active' | 'inactive' | 'archived' | 'pending_review';
+  isFeatured: boolean;
+  viewCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateProductData {
+  title: string;
+  description: string;
+  category: string;
+  price: number;
+  stocks: number;
+  discount?: number;
+  condition: string;
+  auctionType: 'Auction' | 'Retail' | 'Anti-Piece';
+  startingBid?: number;
+  auctionEndDate?: string;
+  brand?: string;
+  model?: string;
+  authenticity?: 'authentic' | 'replica' | 'unknown';
+  tags?: string[];
+  images?: ProductImage[];
+}
+
+export interface ProductFilters {
+  page?: number;
+  limit?: number;
+  category?: string;
+  auctionType?: string;
+  condition?: string;
+  minPrice?: number;
+  maxPrice?: number;
+}
+
+export interface ProductSearchFilters extends ProductFilters {
+  q?: string;
+}
+
+export interface PaginatedResponse<T> {
+  data: T[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    pages: number;
+  };
+}
+
 class ApiClient {
   private baseURL: string;
   private token: string | null = null;
@@ -65,9 +144,13 @@ class ApiClient {
       };
     }
 
+    console.log('API Request:', { url, config }); // Debug log
+
     try {
       const response = await fetch(url, config);
       const data = await response.json();
+
+      console.log('API Response:', { status: response.status, data }); // Debug log
 
       if (!response.ok) {
         // For validation errors, show the first validation error message
@@ -80,6 +163,7 @@ class ApiClient {
 
       return data;
     } catch (error) {
+      console.error('API Error:', error); // Debug log
       if (error instanceof Error) {
         throw new Error(error.message);
       }
@@ -181,6 +265,72 @@ class ApiClient {
     });
   }
 
+  // Product methods
+  async createProduct(productData: CreateProductData): Promise<Product> {
+    const response = await this.request<{ product: Product }>('/products', {
+      method: 'POST',
+      body: JSON.stringify(productData),
+    });
+    return response.data!.product;
+  }
+
+  async getProducts(filters: ProductFilters = {}): Promise<PaginatedResponse<Product>> {
+    const queryParams = new URLSearchParams();
+    
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value !== undefined && value !== null) {
+        queryParams.append(key, value.toString());
+      }
+    });
+
+    const endpoint = `/products${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+    const response = await this.request<PaginatedResponse<Product>>(endpoint);
+    return response.data!;
+  }
+
+  async getProduct(id: string): Promise<Product> {
+    const response = await this.request<{ product: Product }>(`/products/${id}`);
+    return response.data!.product;
+  }
+
+  async getFeaturedProducts(limit: number = 10): Promise<Product[]> {
+    const response = await this.request<{ products: Product[] }>(`/products/featured?limit=${limit}`);
+    return response.data!.products;
+  }
+
+  async getPopularProducts(limit: number = 10): Promise<Product[]> {
+    const response = await this.request<{ products: Product[] }>(`/products/popular?limit=${limit}`);
+    return response.data!.products;
+  }
+
+  async searchProducts(filters: ProductSearchFilters = {}): Promise<{ products: Product[]; query?: string; filters?: ProductSearchFilters }> {
+    const queryParams = new URLSearchParams();
+    
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value !== undefined && value !== null) {
+        queryParams.append(key, value.toString());
+      }
+    });
+
+    const endpoint = `/products/search${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+    const response = await this.request<{ products: Product[]; query?: string; filters?: ProductSearchFilters }>(endpoint);
+    return response.data!;
+  }
+
+  async getProductsByCategory(category: string, filters: Omit<ProductFilters, 'category'> = {}): Promise<PaginatedResponse<Product>> {
+    const queryParams = new URLSearchParams();
+    
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value !== undefined && value !== null) {
+        queryParams.append(key, value.toString());
+      }
+    });
+
+    const endpoint = `/products/category/${category}${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+    const response = await this.request<PaginatedResponse<Product>>(endpoint);
+    return response.data!;
+  }
+
   // Token management
   setToken(token: string): void {
     this.token = token;
@@ -205,15 +355,20 @@ class ApiClient {
 // Create and export a singleton instance
 export const apiClient = new ApiClient(API_BASE_URL);
 
-// Export individual methods for convenience
-export const {
-  login,
-  register,
-  logout,
-  getMe,
-  refreshToken,
-  forgotPassword,
-  resetPassword,
-  verifyEmail,
-  resendVerification,
-} = apiClient;
+// Export individual methods for convenience (bound to the instance)
+export const login = apiClient.login.bind(apiClient);
+export const register = apiClient.register.bind(apiClient);
+export const logout = apiClient.logout.bind(apiClient);
+export const getMe = apiClient.getMe.bind(apiClient);
+export const refreshToken = apiClient.refreshToken.bind(apiClient);
+export const forgotPassword = apiClient.forgotPassword.bind(apiClient);
+export const resetPassword = apiClient.resetPassword.bind(apiClient);
+export const verifyEmail = apiClient.verifyEmail.bind(apiClient);
+export const resendVerification = apiClient.resendVerification.bind(apiClient);
+export const createProduct = apiClient.createProduct.bind(apiClient);
+export const getProducts = apiClient.getProducts.bind(apiClient);
+export const getProduct = apiClient.getProduct.bind(apiClient);
+export const getFeaturedProducts = apiClient.getFeaturedProducts.bind(apiClient);
+export const getPopularProducts = apiClient.getPopularProducts.bind(apiClient);
+export const searchProducts = apiClient.searchProducts.bind(apiClient);
+export const getProductsByCategory = apiClient.getProductsByCategory.bind(apiClient);
