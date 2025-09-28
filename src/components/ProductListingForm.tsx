@@ -17,9 +17,10 @@ interface ProductFormData {
   images: File[];
   tags: string[];
   auctionType: string;
-  duration: string;
   startingBid?: string;
-  buyNowPrice?: string;
+  stocks: string;
+  discount: string;
+  auctionEndDate?: string;
 }
 
 const categories = [
@@ -45,9 +46,9 @@ const conditions = [
 ];
 
 const auctionTypes = [
-  "Fixed Price",
   "Auction",
-  "Both"
+  "Retail", 
+  "Anti-Piece"
 ];
 
 export default function ProductListingForm({ onClose }: { onClose: () => void }) {
@@ -59,14 +60,15 @@ export default function ProductListingForm({ onClose }: { onClose: () => void })
     condition: "",
     images: [],
     tags: [],
-    auctionType: "Fixed Price",
-    duration: "7",
+    auctionType: "Retail",
     startingBid: "",
-    buyNowPrice: ""
+    stocks: "",
+    discount: "",
+    auctionEndDate: ""
   });
 
   const [newTag, setNewTag] = useState("");
-  const [errors, setErrors] = useState<Partial<ProductFormData>>({});
+  const [errors, setErrors] = useState<Partial<Record<keyof ProductFormData, string>>>({});
 
   const handleInputChange = (field: keyof ProductFormData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -109,14 +111,25 @@ export default function ProductListingForm({ onClose }: { onClose: () => void })
   };
 
   const validateForm = () => {
-    const newErrors: Partial<ProductFormData> = {};
+    const newErrors: Partial<Record<keyof ProductFormData, string>> = {};
     
     if (!formData.title.trim()) newErrors.title = "Title is required";
     if (!formData.description.trim()) newErrors.description = "Description is required";
     if (!formData.category) newErrors.category = "Category is required";
     if (!formData.price.trim()) newErrors.price = "Price is required";
     if (!formData.condition) newErrors.condition = "Condition is required";
+    if (!formData.stocks.trim()) newErrors.stocks = "Stocks is required";
     if (formData.images.length === 0) newErrors.images = "At least one image is required";
+    
+    // Validate auction end date for auction listings
+    if (formData.auctionType === "Auction" && !formData.auctionEndDate) {
+      newErrors.auctionEndDate = "Auction end date is required for auction listings";
+    }
+    
+    // Validate auction end date is in the future
+    if (formData.auctionEndDate && new Date(formData.auctionEndDate) <= new Date()) {
+      newErrors.auctionEndDate = "Auction end date must be in the future";
+    }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -195,7 +208,7 @@ export default function ProductListingForm({ onClose }: { onClose: () => void })
             </div>
 
             {/* Pricing & Condition */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="price">Price *</Label>
                 <Input
@@ -227,24 +240,53 @@ export default function ProductListingForm({ onClose }: { onClose: () => void })
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="auctionType">Listing Type</Label>
-                <Select value={formData.auctionType} onValueChange={(value) => handleInputChange("auctionType", value)}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {auctionTypes.map((type) => (
-                      <SelectItem key={type} value={type}>
-                        {type}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Label htmlFor="stocks">Stocks *</Label>
+                <Input
+                  id="stocks"
+                  type="number"
+                  value={formData.stocks}
+                  onChange={(e) => handleInputChange("stocks", e.target.value)}
+                  placeholder="0"
+                  min="0"
+                  className={errors.stocks ? "border-red-500" : ""}
+                />
+                {errors.stocks && <p className="text-sm text-red-500">{errors.stocks}</p>}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="discount">Discount (%)</Label>
+                <Input
+                  id="discount"
+                  type="number"
+                  value={formData.discount}
+                  onChange={(e) => handleInputChange("discount", e.target.value)}
+                  placeholder="0"
+                  min="0"
+                  max="100"
+                  className={errors.discount ? "border-red-500" : ""}
+                />
+                {errors.discount && <p className="text-sm text-red-500">{errors.discount}</p>}
               </div>
             </div>
 
+            <div className="space-y-2">
+              <Label htmlFor="auctionType">Listing Type</Label>
+              <Select value={formData.auctionType} onValueChange={(value) => handleInputChange("auctionType", value)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {auctionTypes.map((type) => (
+                    <SelectItem key={type} value={type}>
+                      {type}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
             {/* Auction Specific Fields */}
-            {formData.auctionType === "Auction" || formData.auctionType === "Both" && (
+            {formData.auctionType === "Auction" && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="startingBid">Starting Bid</Label>
@@ -258,35 +300,20 @@ export default function ProductListingForm({ onClose }: { onClose: () => void })
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="duration">Auction Duration (Days)</Label>
-                  <Select value={formData.duration} onValueChange={(value) => handleInputChange("duration", value)}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="1">1 Day</SelectItem>
-                      <SelectItem value="3">3 Days</SelectItem>
-                      <SelectItem value="7">7 Days</SelectItem>
-                      <SelectItem value="14">14 Days</SelectItem>
-                      <SelectItem value="30">30 Days</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <Label htmlFor="auctionEndDate">Auction End Date *</Label>
+                  <Input
+                    id="auctionEndDate"
+                    type="datetime-local"
+                    value={formData.auctionEndDate}
+                    onChange={(e) => handleInputChange("auctionEndDate", e.target.value)}
+                    min={new Date().toISOString().slice(0, 16)}
+                    className={errors.auctionEndDate ? "border-red-500" : ""}
+                  />
+                  {errors.auctionEndDate && <p className="text-sm text-red-500">{errors.auctionEndDate}</p>}
                 </div>
               </div>
             )}
 
-            {formData.auctionType === "Both" && (
-              <div className="space-y-2">
-                <Label htmlFor="buyNowPrice">Buy Now Price</Label>
-                <Input
-                  id="buyNowPrice"
-                  type="number"
-                  value={formData.buyNowPrice}
-                  onChange={(e) => handleInputChange("buyNowPrice", e.target.value)}
-                  placeholder="0.00"
-                />
-              </div>
-            )}
 
             {/* Image Upload */}
             <div className="space-y-2">
