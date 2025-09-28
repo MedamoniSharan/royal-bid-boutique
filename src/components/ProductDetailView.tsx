@@ -22,8 +22,22 @@ import {
   ChevronLeft,
   ChevronRight,
   Minus,
-  Plus
+  Plus,
+  CheckCircle,
+  Trophy
 } from "lucide-react";
+
+interface BidHistory {
+  id: number;
+  bidder: {
+    name: string;
+    avatar?: string;
+    isVerified: boolean;
+  };
+  amount: number;
+  timestamp: string;
+  isWinningBid: boolean;
+}
 
 interface ProductDetail {
   id: number;
@@ -63,11 +77,7 @@ interface ProductDetail {
     total: number;
     breakdown: Record<number, number>;
   };
-  promoCode?: string;
-  studentOffer?: {
-    discount: number;
-    code: string;
-  };
+  bidHistory?: BidHistory[];
 }
 
 const mockProduct: ProductDetail = {
@@ -135,22 +145,76 @@ const mockProduct: ProductDetail = {
       1: 0
     }
   },
-  studentOffer: {
-    discount: 10,
-    code: "STUDENT10"
-  }
+  bidHistory: [
+    {
+      id: 1,
+      bidder: {
+        name: "Alex Thompson",
+        avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face",
+        isVerified: true
+      },
+      amount: 15500,
+      timestamp: "2 hours ago",
+      isWinningBid: true
+    },
+    {
+      id: 2,
+      bidder: {
+        name: "Sarah Johnson",
+        avatar: "https://images.unsplash.com/photo-1494790108755-2616b612b786?w=100&h=100&fit=crop&crop=face",
+        isVerified: true
+      },
+      amount: 15200,
+      timestamp: "3 hours ago",
+      isWinningBid: false
+    },
+    {
+      id: 3,
+      bidder: {
+        name: "Mike Chen",
+        avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face",
+        isVerified: false
+      },
+      amount: 15000,
+      timestamp: "4 hours ago",
+      isWinningBid: false
+    },
+    {
+      id: 4,
+      bidder: {
+        name: "Emma Wilson",
+        avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop&crop=face",
+        isVerified: true
+      },
+      amount: 14800,
+      timestamp: "5 hours ago",
+      isWinningBid: false
+    },
+    {
+      id: 5,
+      bidder: {
+        name: "David Brown",
+        avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop&crop=face",
+        isVerified: true
+      },
+      amount: 14500,
+      timestamp: "6 hours ago",
+      isWinningBid: false
+    }
+  ]
 };
 
-export default function ProductDetailView({ productId, onBack }: { productId: number, onBack: () => void }) {
+export default function ProductDetailView({ productId, onBack, auctionType = "auction" }: { productId: number, onBack: () => void, auctionType?: "auction" | "fixed" | "both" }) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [promoCode, setPromoCode] = useState("");
   const [quantity, setQuantity] = useState(1);
-  const [activeTab, setActiveTab] = useState("description");
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
+  const [activeTab, setActiveTab] = useState(
+    auctionType === "auction" || auctionType === "both" ? "bidHistory" : "description"
+  );
 
   // For demo purposes, using mock data
-  const product = mockProduct;
+  const product = { ...mockProduct, auctionType };
 
   const handleAddToCart = () => {
     if (isAuthenticated) {
@@ -345,22 +409,6 @@ export default function ProductDetailView({ productId, onBack }: { productId: nu
               )}
             </div>
 
-            {/* Promo Code */}
-            <div className="space-y-2">
-              <div className="flex gap-2">
-                <Input
-                  placeholder="Enter promo code"
-                  value={promoCode}
-                  onChange={(e) => setPromoCode(e.target.value)}
-                />
-                <Button variant="outline">Apply</Button>
-              </div>
-              {product.studentOffer && (
-                <p className="text-sm text-green-600">
-                  STUDENT OFFER: {product.studentOffer.discount}% DISCOUNT with code {product.studentOffer.code}
-                </p>
-              )}
-            </div>
 
             {/* Seller Info */}
             <Card>
@@ -464,9 +512,12 @@ export default function ProductDetailView({ productId, onBack }: { productId: nu
         {/* Product Details Tabs */}
         <div className="mt-12">
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-3">
+            <TabsList className={`grid w-full ${product.auctionType === "auction" || product.auctionType === "both" ? 'grid-cols-4' : 'grid-cols-3'}`}>
               <TabsTrigger value="description">Description</TabsTrigger>
               <TabsTrigger value="features">Features</TabsTrigger>
+              {product.auctionType === "auction" || product.auctionType === "both" ? (
+                <TabsTrigger value="bidHistory">Bid History ({product.bidHistory?.length || 0})</TabsTrigger>
+              ) : null}
               <TabsTrigger value="reviews">Reviews ({product.reviews.total})</TabsTrigger>
             </TabsList>
 
@@ -518,6 +569,71 @@ export default function ProductDetailView({ productId, onBack }: { productId: nu
                 </Card>
               </div>
             </TabsContent>
+
+            {(product.auctionType === "auction" || product.auctionType === "both") && (
+              <TabsContent value="bidHistory" className="mt-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Trophy className="w-5 h-5 text-gold" />
+                      Bid History
+                    </CardTitle>
+                    <CardDescription>
+                      Track of all bids placed on this auction
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      {product.bidHistory?.map((bid, index) => (
+                        <div 
+                          key={bid.id} 
+                          className={`flex items-center justify-between p-4 rounded-lg border ${
+                            bid.isWinningBid 
+                              ? 'bg-green-50 border-green-200 dark:bg-green-950/20 dark:border-green-800' 
+                              : 'bg-card border-border'
+                          }`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-medium text-muted-foreground">
+                                #{product.bidHistory!.length - index}
+                              </span>
+                              {bid.isWinningBid && (
+                                <Badge className="bg-green-600 text-white">
+                                  <CheckCircle className="w-3 h-3 mr-1" />
+                                  Winning
+                                </Badge>
+                              )}
+                            </div>
+                            <Avatar className="h-10 w-10">
+                              <AvatarImage src={bid.bidder.avatar} alt={bid.bidder.name} />
+                              <AvatarFallback>{bid.bidder.name.charAt(0)}</AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <span className="font-medium">{bid.bidder.name}</span>
+                                {bid.bidder.isVerified && (
+                                  <CheckCircle className="w-4 h-4 text-blue-600" />
+                                )}
+                              </div>
+                              <span className="text-sm text-muted-foreground">{bid.timestamp}</span>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <div className="text-lg font-bold text-foreground">
+                              {formatPrice(bid.amount)}
+                            </div>
+                            {bid.isWinningBid && (
+                              <div className="text-sm text-green-600 font-medium">Current Highest</div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            )}
 
             <TabsContent value="reviews" className="mt-6">
               <Card>

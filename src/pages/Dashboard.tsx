@@ -17,7 +17,8 @@ import {
   Package,
   Heart,
   Plus,
-  Eye
+  Eye,
+  Home
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import ProductListingForm from "@/components/ProductListingForm";
@@ -59,11 +60,6 @@ export default function Dashboard() {
     setSelectedProductId(null);
   };
 
-  // If a product is selected, show the detail view
-  if (selectedProductId) {
-    return <ProductDetailView productId={selectedProductId} onBack={handleBackToDashboard} />;
-  }
-
   const sidebarItems = [
     {
       id: 'auction' as SidebarSection,
@@ -87,23 +83,33 @@ export default function Dashboard() {
 
   const mockItems = {
     auction: [
-      { id: 1, title: "Vintage Rolex Submariner", description: "1960s Classic Diving Watch", currentBid: 15500, nextBid: 16000, bids: 23, timeLeft: "2h 45m", category: "Watches", image: "https://images.unsplash.com/photo-1522312346375-d1a52e2b99b3?w=400&h=400&fit=crop", status: "live" },
-      { id: 2, title: "Rare Pokémon Card Set", description: "1st Edition Base Set Charizard", currentBid: 8900, nextBid: 9500, bids: 45, timeLeft: "5h 12m", category: "Collectibles", image: "https://images.unsplash.com/photo-1606107557195-0e29a4b5b4aa?w=400&h=400&fit=crop", status: "hot" },
-      { id: 3, title: "Abstract Oil Painting", description: "Original Contemporary Art Piece", currentBid: 3200, nextBid: 3500, bids: 12, timeLeft: "1d 8h", category: "Art", image: "https://images.unsplash.com/photo-1541961017774-22349e4a1262?w=400&h=400&fit=crop", status: "upcoming" }
+      { id: 1, title: "Vintage Rolex Submariner", description: "1960s Classic Diving Watch", currentBid: 15500, nextBid: 16000, bids: 23, timeLeft: "2h 45m", category: "Watches", image: "https://images.unsplash.com/photo-1522312346375-d1a52e2b99b3?w=400&h=400&fit=crop", status: "live", auctionType: "auction" },
+      { id: 2, title: "Rare Pokémon Card Set", description: "1st Edition Base Set Charizard", currentBid: 8900, nextBid: 9500, bids: 45, timeLeft: "5h 12m", category: "Collectibles", image: "https://images.unsplash.com/photo-1606107557195-0e29a4b5b4aa?w=400&h=400&fit=crop", status: "hot", auctionType: "auction" },
+      { id: 3, title: "Abstract Oil Painting", description: "Original Contemporary Art Piece", currentBid: 3200, nextBid: 3500, bids: 12, timeLeft: "1d 8h", category: "Art", image: "https://images.unsplash.com/photo-1541961017774-22349e4a1262?w=400&h=400&fit=crop", status: "upcoming", auctionType: "auction" }
     ],
     retail: [
-      { id: 1, title: "Designer Handbag", description: "Luxury Leather Handbag", price: 1200, stock: 5, category: "Fashion", image: "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=400&h=400&fit=crop", status: "available" },
-      { id: 2, title: "Smart Watch", description: "Latest Technology Smart Watch", price: 299, stock: 12, category: "Electronics", image: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&h=400&fit=crop", status: "available" },
-      { id: 3, title: "Artisan Jewelry", description: "Handcrafted Premium Jewelry", price: 450, stock: 8, category: "Accessories", image: "https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=400&h=400&fit=crop", status: "available" }
+      { id: 1, title: "Designer Handbag", description: "Luxury Leather Handbag", price: 1200, stock: 5, category: "Fashion", image: "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=400&h=400&fit=crop", status: "available", auctionType: "fixed" },
+      { id: 2, title: "Smart Watch", description: "Latest Technology Smart Watch", price: 299, stock: 12, category: "Electronics", image: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&h=400&fit=crop", status: "available", auctionType: "fixed" },
+      { id: 3, title: "Artisan Jewelry", description: "Handcrafted Premium Jewelry", price: 450, stock: 8, category: "Accessories", image: "https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=400&h=400&fit=crop", status: "available", auctionType: "fixed" }
     ],
     'anti-pieces': [
-      { id: 1, title: "Antique Vase", description: "18th Century Ceramic Vase", price: 800, age: "18th Century", category: "Ceramics", image: "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=400&fit=crop", status: "antique" },
-      { id: 2, title: "Vintage Book Collection", description: "Rare 19th Century Literature", price: 1200, age: "19th Century", category: "Books", image: "https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=400&h=400&fit=crop", status: "antique" },
-      { id: 3, title: "Classic Pocket Watch", description: "Vintage 1920s Timepiece", price: 650, age: "1920s", category: "Timepieces", image: "https://images.unsplash.com/photo-1524592094714-0f0654e20314?w=400&h=400&fit=crop", status: "antique" }
+      { id: 1, title: "Antique Vase", description: "18th Century Ceramic Vase", price: 800, age: "18th Century", category: "Ceramics", image: "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=400&fit=crop", status: "antique", auctionType: "fixed" },
+      { id: 2, title: "Vintage Book Collection", description: "Rare 19th Century Literature", price: 1200, age: "19th Century", category: "Books", image: "https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=400&h=400&fit=crop", status: "antique", auctionType: "fixed" },
+      { id: 3, title: "Classic Pocket Watch", description: "Vintage 1920s Timepiece", price: 650, age: "1920s", category: "Timepieces", image: "https://images.unsplash.com/photo-1524592094714-0f0654e20314?w=400&h=400&fit=crop", status: "antique", auctionType: "fixed" }
     ]
   };
 
   const currentItems = mockItems[activeSection];
+
+  // If a product is selected, show the detail view
+  if (selectedProductId) {
+    const selectedItem = currentItems.find(item => item.id === selectedProductId);
+    return <ProductDetailView 
+      productId={selectedProductId} 
+      onBack={handleBackToDashboard}
+      auctionType={selectedItem?.auctionType as "auction" | "fixed" | "both" || "auction"}
+    />;
+  }
 
   return (
     <div className="min-h-screen bg-background flex">
@@ -133,6 +139,16 @@ export default function Dashboard() {
 
         {/* Navigation Buttons */}
         <div className="flex-1 p-6 space-y-2">
+          {/* Home Button */}
+          <Button
+            variant="ghost"
+            className="w-full justify-start h-12 text-gray-300 hover:text-white hover:bg-gray-800 mb-4"
+            onClick={() => navigate('/')}
+          >
+            <Home className="w-5 h-5 mr-3 text-gray-400" />
+            Back to Home
+          </Button>
+          
           <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4">
             Categories
           </h3>
@@ -330,15 +346,14 @@ export default function Dashboard() {
                           {activeSection === 'auction' ? 'Place Bid' : 'Buy Now'}
                         </GlowButton>
                         <Button 
-                          variant="ghost" 
-                          size="sm"
-                          className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800"
+                          variant="outline"
+                          className="px-3 hover:bg-gray-100 dark:hover:bg-gray-800"
                           onClick={(e) => {
                             e.stopPropagation();
                             // Handle favorite action
                           }}
                         >
-                          <Heart className="w-5 h-5 text-gray-600 hover:text-red-500 transition-colors" />
+                          <Heart className="w-4 h-4 text-gray-600 hover:text-red-500 transition-colors" />
                         </Button>
                       </div>
                     </>
