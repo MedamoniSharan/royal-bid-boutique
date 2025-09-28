@@ -5,6 +5,8 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 import { 
   ArrowLeft, 
   Heart, 
@@ -144,9 +146,19 @@ export default function ProductDetailView({ productId, onBack }: { productId: nu
   const [promoCode, setPromoCode] = useState("");
   const [quantity, setQuantity] = useState(1);
   const [activeTab, setActiveTab] = useState("description");
+  const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
 
   // For demo purposes, using mock data
   const product = mockProduct;
+
+  const handleAddToCart = () => {
+    if (isAuthenticated) {
+      navigate('/dashboard');
+    } else {
+      navigate('/login');
+    }
+  };
 
   const nextImage = () => {
     setCurrentImageIndex((prev) => (prev + 1) % product.images.length);
@@ -399,19 +411,29 @@ export default function ProductDetailView({ productId, onBack }: { productId: nu
               <div className="space-y-2">
                 {product.auctionType === "auction" || product.auctionType === "both" ? (
                   <>
-                    <Button className="w-full bg-crimson hover:bg-crimson/90 h-12">
+                    <Button 
+                      className="w-full bg-crimson hover:bg-crimson/90 h-12"
+                      onClick={handleAddToCart}
+                    >
                       <Gavel className="w-5 h-5 mr-2" />
                       Place Bid - {formatPrice(product.auctionDetails?.currentBid || product.currentPrice)}
                     </Button>
                     {product.auctionDetails?.buyNowPrice && (
-                      <Button variant="outline" className="w-full h-12">
+                      <Button 
+                        variant="outline" 
+                        className="w-full h-12"
+                        onClick={handleAddToCart}
+                      >
                         <ShoppingCart className="w-5 h-5 mr-2" />
                         Buy Now - {formatPrice(product.auctionDetails.buyNowPrice)}
                       </Button>
                     )}
                   </>
                 ) : (
-                  <Button className="w-full bg-crimson hover:bg-crimson/90 h-12">
+                  <Button 
+                    className="w-full bg-crimson hover:bg-crimson/90 h-12"
+                    onClick={handleAddToCart}
+                  >
                     <ShoppingCart className="w-5 h-5 mr-2" />
                     Buy Now - {formatPrice(product.currentPrice * quantity)}
                   </Button>

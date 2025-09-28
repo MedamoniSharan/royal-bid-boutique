@@ -3,6 +3,8 @@ import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge";
 import { Heart, ShoppingBag, Star } from "lucide-react";
 import retailImage from "@/assets/retail-showcase.jpg";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 
 const retailProducts = [
   {
@@ -50,6 +52,17 @@ const retailProducts = [
 ];
 
 export default function RetailSection() {
+  const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
+
+  const handleAddToCart = (productId: number) => {
+    if (isAuthenticated) {
+      navigate('/dashboard');
+    } else {
+      navigate('/login');
+    }
+  };
+
   return (
     <section className="py-20 bg-background">
       <div className="max-w-7xl mx-auto px-4">
@@ -129,7 +142,10 @@ export default function RetailSection() {
               </CardContent>
 
               <CardFooter className="p-4 pt-0">
-                <Button className="w-full bg-charcoal hover:bg-charcoal/90 text-white">
+                <Button 
+                  className="w-full bg-charcoal hover:bg-charcoal/90 text-white"
+                  onClick={() => handleAddToCart(product.id)}
+                >
                   <ShoppingBag className="w-4 h-4 mr-2" />
                   Add to Cart
                 </Button>
