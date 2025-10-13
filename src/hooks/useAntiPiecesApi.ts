@@ -99,10 +99,10 @@ export function useSearchAntiPiecesProducts(
 /**
  * Hook to get anti-pieces product details
  */
-export function useAntiPiecesProduct(productId: string) {
+export function useAntiPiecesProduct(productId?: string) {
   return useQuery({
-    queryKey: antiPiecesQueryKeys.product(productId),
-    queryFn: () => antiPiecesApi.getProduct(productId),
+    queryKey: antiPiecesQueryKeys.product(productId || ''),
+    queryFn: () => antiPiecesApi.getProduct(productId!),
     enabled: !!productId,
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 15 * 60 * 1000, // 15 minutes

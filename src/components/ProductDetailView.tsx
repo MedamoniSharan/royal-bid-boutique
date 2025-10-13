@@ -7,6 +7,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { useQuery } from "@tanstack/react-query";
+import { useRetailProduct } from "@/hooks/useRetailApi";
+import { useAntiPiecesProduct } from "@/hooks/useAntiPiecesApi";
+import { useAuctionProduct } from "@/hooks/useAuctionApi";
 import { 
   ArrowLeft, 
   Heart, 
@@ -80,141 +84,293 @@ interface ProductDetail {
   bidHistory?: BidHistory[];
 }
 
-const mockProduct: ProductDetail = {
-  id: 1,
-  title: "Vintage Rolex Submariner 1960s",
-  description: "Classic diving watch in excellent condition",
-  longDescription: "This vintage Rolex Submariner from the 1960s is a true collector's piece. Featuring the iconic Oyster case, automatic movement, and the famous Mercedes hands, this timepiece represents the golden age of dive watches. The watch has been professionally serviced and comes with authentication papers.",
-  category: "Watches",
-  currentPrice: 15500,
-  originalPrice: 16500,
-  discount: 6,
-  images: [
-    "https://images.unsplash.com/photo-1522312346375-d1a52e2b99b3?w=600&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1508685096489-7aacd43bd3b1?w=600&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1566479179817-c0d9d0f6d8b9?w=600&h=600&fit=crop"
-  ],
-  seller: {
-    name: "Luxury Timepieces",
-    avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face",
-    rating: 4.9,
-    totalSales: 1247
-  },
-  condition: "Excellent",
-  tags: ["Vintage", "Luxury", "Collectible", "Authentic", "Serviced"],
-  auctionType: "both",
-  auctionDetails: {
-    currentBid: 15500,
-    startingBid: 12000,
-    bidCount: 23,
-    timeLeft: "2d 14h 32m",
-    buyNowPrice: 18000
-  },
-  features: [
-    "Original Rolex Oyster case",
-    "Automatic movement",
-    "Water resistant to 200m",
-    "Professional authentication included",
-    "Recently serviced by authorized dealer",
-    "Original box and papers"
-  ],
-  specifications: {
-    "Brand": "Rolex",
-    "Model": "Submariner",
-    "Year": "1960s",
-    "Movement": "Automatic",
-    "Case Material": "Stainless Steel",
-    "Dial Color": "Black",
-    "Water Resistance": "200m",
-    "Case Diameter": "40mm"
-  },
-  shipping: {
-    free: true,
-    estimatedDelivery: "3-5 business days",
-    returnPolicy: "30 days return policy"
-  },
-  reviews: {
-    average: 4.8,
-    total: 156,
-    breakdown: {
-      5: 120,
-      4: 28,
-      3: 6,
-      2: 2,
-      1: 0
-    }
-  },
-  bidHistory: [
-    {
-      id: 1,
-      bidder: {
-        name: "Alex Thompson",
-        avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face",
-        isVerified: true
-      },
-      amount: 15500,
-      timestamp: "2 hours ago",
-      isWinningBid: true
-    },
-    {
-      id: 2,
-      bidder: {
-        name: "Sarah Johnson",
-        avatar: "https://images.unsplash.com/photo-1494790108755-2616b612b786?w=100&h=100&fit=crop&crop=face",
-        isVerified: true
-      },
-      amount: 15200,
-      timestamp: "3 hours ago",
-      isWinningBid: false
-    },
-    {
-      id: 3,
-      bidder: {
-        name: "Mike Chen",
-        avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face",
-        isVerified: false
-      },
-      amount: 15000,
-      timestamp: "4 hours ago",
-      isWinningBid: false
-    },
-    {
-      id: 4,
-      bidder: {
-        name: "Emma Wilson",
-        avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop&crop=face",
-        isVerified: true
-      },
-      amount: 14800,
-      timestamp: "5 hours ago",
-      isWinningBid: false
-    },
-    {
-      id: 5,
-      bidder: {
-        name: "David Brown",
-        avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop&crop=face",
-        isVerified: true
-      },
-      amount: 14500,
-      timestamp: "6 hours ago",
-      isWinningBid: false
-    }
-  ]
-};
 
-export default function ProductDetailView({ productId, onBack, auctionType = "auction" }: { productId: string | number, onBack: () => void, auctionType?: "auction" | "fixed" | "both" }) {
+export default function ProductDetailView({ productId, onBack, auctionType = "auction" }: { productId: string | number, onBack: () => void, auctionType?: "auction" | "retail" | "anti-pieces" }) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
   const [activeTab, setActiveTab] = useState(
-    auctionType === "auction" || auctionType === "both" ? "bidHistory" : "description"
+    auctionType === "auction" ? "bidHistory" : "description"
   );
 
-  // For demo purposes, using mock data
-  const product = { ...mockProduct, auctionType };
+  // Fetch product data based on auction type
+  const { data: retailProduct, isLoading: retailLoading, error: retailError } = useRetailProduct(
+    auctionType === "retail" ? productId.toString() : undefined
+  );
+  
+  const { data: antiPiecesProduct, isLoading: antiPiecesLoading, error: antiPiecesError } = useAntiPiecesProduct(
+    auctionType === "anti-pieces" ? productId.toString() : undefined
+  );
+  
+  const { data: auctionProduct, isLoading: auctionLoading, error: auctionError } = useAuctionProduct(
+    auctionType === "auction" ? productId.toString() : undefined
+  );
+
+  // Debug logging
+  console.log('ProductDetailView Debug:', {
+    productId,
+    auctionType,
+    retailProduct,
+    antiPiecesProduct,
+    auctionProduct,
+    retailError,
+    antiPiecesError,
+    auctionError
+  });
+
+  // Detailed structure debugging
+  if (auctionProduct) {
+    const auctionProductAny = auctionProduct as any;
+    console.log('Auction Product Full Structure:', {
+      'auctionProduct': auctionProductAny,
+      'auctionProduct.data': auctionProductAny.data,
+      'auctionProduct.data?.data': auctionProductAny.data?.data,
+      'auctionProduct.data?.product': auctionProductAny.data?.product,
+      'auctionProduct.data?.data?.product': auctionProductAny.data?.data?.product
+    });
+  }
+
+  // Transform API product data to match the expected UI format
+  const transformApiProductToUI = (apiProduct: any, type: string) => {
+    // Get the first image URL
+    const getImageUrl = (product: any) => {
+      console.log('getImageUrl called with product:', {
+        'product.images': product.images,
+        'product.primaryImage': product.primaryImage,
+        'product.images?.length': product.images?.length
+      });
+      
+      if (product.images && product.images.length > 0) {
+        const firstImage = product.images[0];
+        const imageUrl = typeof firstImage === 'string' ? firstImage : firstImage.url;
+        console.log('Using first image from images array:', imageUrl);
+        return imageUrl;
+      }
+      if (product.primaryImage) {
+        const imageUrl = typeof product.primaryImage === 'string' ? product.primaryImage : product.primaryImage.url;
+        console.log('Using primary image:', imageUrl);
+        return imageUrl;
+      }
+      console.log('Using fallback image');
+      return "https://images.unsplash.com/photo-1522312346375-d1a52e2b99b3?w=400&h=400&fit=crop";
+    };
+
+    // Get seller name
+    const getSellerName = (seller: any) => {
+      if (seller?.firstName && seller?.lastName) {
+        return `${seller.firstName} ${seller.lastName}`;
+      }
+      if (seller?.name) {
+        return seller.name;
+      }
+      return "Unknown Seller";
+    };
+
+    // Base product data
+    const baseProduct = {
+      id: apiProduct._id || apiProduct.id,
+      title: apiProduct.title || "Untitled Product",
+      description: apiProduct.description || "No description available",
+      category: apiProduct.category || "Uncategorized",
+      condition: apiProduct.condition || "Unknown",
+      brand: apiProduct.brand || "",
+      model: apiProduct.model || "",
+      image: getImageUrl(apiProduct),
+      images: apiProduct.images ? apiProduct.images.map((img: any) => typeof img === 'string' ? img : img.url) : [getImageUrl(apiProduct)],
+      viewCount: apiProduct.viewCount || 0,
+      seller: {
+        name: getSellerName(apiProduct.seller),
+        avatar: apiProduct.seller?.avatar || "",
+        rating: apiProduct.seller?.rating || 4.5,
+        totalSales: apiProduct.seller?.totalSales || 0,
+        ...apiProduct.seller
+      },
+      auctionType: type
+    };
+
+    // Add type-specific properties
+    if (type === "retail") {
+      return {
+        ...baseProduct,
+        price: apiProduct.price || 0,
+        currentPrice: apiProduct.discount > 0 ? apiProduct.price * (1 - apiProduct.discount / 100) : apiProduct.price,
+        originalPrice: apiProduct.discount > 0 ? apiProduct.price : undefined,
+        discount: apiProduct.discount || 0,
+        stock: apiProduct.stocks || 0,
+        status: (apiProduct.stocks || 0) > 0 ? "available" : "out_of_stock",
+        age: "New",
+        shipping: {
+          cost: 0,
+          estimatedDays: "3-5",
+          free: true
+        },
+        tags: apiProduct.tags || ["New", "Fast Shipping"],
+        features: apiProduct.features || [],
+        specifications: apiProduct.specifications || {},
+        longDescription: apiProduct.longDescription || apiProduct.description,
+        reviews: [],
+        bidHistory: []
+      };
+    }
+
+    if (type === "anti-pieces") {
+      return {
+        ...baseProduct,
+        price: apiProduct.discount > 0 ? apiProduct.price * (1 - apiProduct.discount / 100) : apiProduct.price,
+        currentPrice: apiProduct.discount > 0 ? apiProduct.price * (1 - apiProduct.discount / 100) : apiProduct.price,
+        originalPrice: apiProduct.discount > 0 ? apiProduct.price : undefined,
+        discount: apiProduct.discount || 0,
+        age: apiProduct.age || "Vintage",
+        status: "antique",
+        shipping: {
+          cost: 15,
+          estimatedDays: "5-7",
+          free: false
+        },
+        tags: apiProduct.tags || ["Vintage", "Authentic", "Collectible"],
+        features: apiProduct.features || [],
+        specifications: apiProduct.specifications || {},
+        longDescription: apiProduct.longDescription || apiProduct.description,
+        reviews: [],
+        bidHistory: []
+      };
+    }
+
+    if (type === "auction") {
+      return {
+        ...baseProduct,
+        currentBid: apiProduct.startingBid || 0,
+        currentPrice: apiProduct.startingBid || 0,
+        nextBid: (apiProduct.startingBid || 0) + 100,
+        bids: Math.floor(Math.random() * 50) + 1, // Mock bid count
+        timeLeft: apiProduct.timeLeft ? `${Math.floor(apiProduct.timeLeft / (1000 * 60 * 60))}h ${Math.floor((apiProduct.timeLeft % (1000 * 60 * 60)) / (1000 * 60))}m` : "2h 45m",
+        status: apiProduct.auctionStatus === 'live' ? "live" : "ended",
+        auctionDetails: {
+          endTime: apiProduct.endTime || new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(),
+          currentBid: apiProduct.startingBid || 0,
+          minBid: apiProduct.startingBid || 0,
+          bidIncrement: 100,
+          reservePrice: apiProduct.reservePrice || 0,
+          buyNowPrice: apiProduct.buyNowPrice || 0,
+          bidCount: Math.floor(Math.random() * 50) + 1
+        },
+        shipping: {
+          cost: 25,
+          estimatedDays: "7-10",
+          free: false
+        },
+        tags: apiProduct.tags || ["Auction", "Live", "Bidding"],
+        features: apiProduct.features || [],
+        specifications: apiProduct.specifications || {},
+        longDescription: apiProduct.longDescription || apiProduct.description,
+        reviews: [],
+        bidHistory: apiProduct.bidHistory || []
+      };
+    }
+
+    return baseProduct;
+  };
+
+  // Helper function to extract product data from various possible response structures
+  const extractProductData = (apiResponse: any) => {
+    if (!apiResponse) return null;
+    
+    // Try different possible paths
+    const paths = [
+      apiResponse.data?.data?.product,
+      apiResponse.data?.product,
+      apiResponse.product,
+      apiResponse
+    ];
+    
+    for (const path of paths) {
+      if (path && path.title) { // Check if it looks like a product object
+        console.log('Found product data at path:', path);
+        return path;
+      }
+    }
+    
+    console.log('No product data found in any path');
+    return null;
+  };
+
+  // Determine which product data to use
+  const getProductData = () => {
+    console.log('getProductData called:', {
+      auctionType,
+      'retailProduct?.data?.product': retailProduct?.data?.product,
+      'antiPiecesProduct?.data?.product': antiPiecesProduct?.data?.product,
+      'auctionProduct?.data?.product': auctionProduct?.data?.product,
+      'retailProduct?.data': retailProduct?.data,
+      'antiPiecesProduct?.data': antiPiecesProduct?.data,
+      'auctionProduct?.data': auctionProduct?.data
+    });
+
+    if (auctionType === "retail" && retailProduct) {
+      const productData = extractProductData(retailProduct);
+      if (productData) {
+        const transformed = transformApiProductToUI(productData, "retail");
+        console.log('Retail product transformed:', transformed);
+        return transformed;
+      }
+    }
+    if (auctionType === "anti-pieces" && antiPiecesProduct) {
+      const productData = extractProductData(antiPiecesProduct);
+      if (productData) {
+        const transformed = transformApiProductToUI(productData, "anti-pieces");
+        console.log('Anti-pieces product transformed:', transformed);
+        return transformed;
+      }
+    }
+    if (auctionType === "auction" && auctionProduct) {
+      const productData = extractProductData(auctionProduct);
+      if (productData) {
+        const transformed = transformApiProductToUI(productData, "auction");
+        console.log('Auction product transformed:', transformed);
+        console.log('Transformed images array:', transformed.images);
+        console.log('Transformed main image:', transformed.image);
+        return transformed;
+      }
+    }
+    
+    console.log('No product data found, returning null');
+    // Return null if no API data available - will show error state
+    return null;
+  };
+
+  const product = getProductData() as any; // Type assertion to handle the dynamic product structure
+  const isLoading = retailLoading || antiPiecesLoading || auctionLoading;
+
+  // Show loading state while fetching product data
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading product details...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state if no product data is available
+  if (!product) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-foreground mb-4">Product Not Found</h2>
+          <p className="text-muted-foreground mb-6">
+            The product you're looking for could not be found or is no longer available.
+          </p>
+          <Button onClick={onBack} variant="outline">
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to Dashboard
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   const handleAddToCart = () => {
     if (isAuthenticated) {
@@ -232,7 +388,10 @@ export default function ProductDetailView({ productId, onBack, auctionType = "au
     setCurrentImageIndex((prev) => (prev - 1 + product.images.length) % product.images.length);
   };
 
-  const formatPrice = (price: number) => {
+  const formatPrice = (price: number | undefined | null) => {
+    if (price === undefined || price === null || isNaN(price)) {
+      return '$0';
+    }
     return `$${price.toLocaleString()}`;
   };
 
@@ -558,12 +717,16 @@ export default function ProductDetailView({ productId, onBack, auctionType = "au
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-2">
-                      {Object.entries(product.specifications).map(([key, value]) => (
+                      {product.specifications ? Object.entries(product.specifications).map(([key, value]) => (
                         <div key={key} className="flex justify-between">
                           <span className="text-muted-foreground">{key}:</span>
-                          <span className="font-medium">{value}</span>
+                          <span className="font-medium">{String(value)}</span>
                         </div>
-                      ))}
+                      )) : (
+                        <div className="text-center text-muted-foreground py-4">
+                          No specifications available
+                        </div>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
@@ -655,18 +818,22 @@ export default function ProductDetailView({ productId, onBack, auctionType = "au
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    {Object.entries(product.reviews.breakdown).reverse().map(([rating, count]) => (
+                    {product.reviews?.breakdown ? Object.entries(product.reviews.breakdown).reverse().map(([rating, count]) => (
                       <div key={rating} className="flex items-center gap-4">
                         <span className="text-sm w-12">{rating} star</span>
                         <div className="flex-1 bg-muted rounded-full h-2">
                           <div
                             className="bg-yellow-400 h-2 rounded-full"
-                            style={{ width: `${(count / product.reviews.total) * 100}%` }}
+                            style={{ width: `${((count as number) / ((product.reviews.total as number) || 1)) * 100}%` }}
                           />
                         </div>
-                        <span className="text-sm text-muted-foreground w-12">{count}</span>
+                        <span className="text-sm text-muted-foreground w-12">{String(count)}</span>
                       </div>
-                    ))}
+                    )) : (
+                      <div className="text-center text-muted-foreground py-8">
+                        No review breakdown available
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>

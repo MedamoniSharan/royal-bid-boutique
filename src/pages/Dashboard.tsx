@@ -155,7 +155,7 @@ export default function Dashboard() {
     category: product.category,
     image: product.images?.[0]?.url || product.primaryImage?.url || "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=400&h=400&fit=crop",
     status: product.stocks > 0 ? "available" : "out_of_stock",
-    auctionType: "fixed" as const,
+    auctionType: "retail" as const,
     discount: product.discount,
     condition: product.condition,
     brand: product.brand,
@@ -195,7 +195,7 @@ export default function Dashboard() {
     category: product.category,
     image: product.images?.[0]?.url || product.primaryImage?.url || "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=400&fit=crop",
     status: "antique",
-    auctionType: "fixed" as const,
+    auctionType: "anti-pieces" as const,
     discount: product.discount,
     condition: product.condition,
     brand: product.brand,
@@ -206,21 +206,28 @@ export default function Dashboard() {
 
 
   // Dynamic data from APIs
-  const mockItems = {
+  const apiItems = {
     auction: auctionData?.products?.map(transformAuctionProduct) || [],
     retail: retailData?.products?.map(transformRetailProduct) || [],
     'anti-pieces': antiPiecesData?.products?.map(transformAntiPiecesProduct) || []
   };
 
-  const currentItems = mockItems[activeSection];
+  const currentItems = apiItems[activeSection];
 
   // If a product is selected, show the detail view
   if (selectedProductId) {
     const selectedItem = currentItems.find(item => item.id.toString() === selectedProductId);
+    console.log('Dashboard Debug - Product Selected:', {
+      selectedProductId,
+      selectedItem,
+      auctionType: selectedItem?.auctionType,
+      activeSection,
+      currentItemsLength: currentItems.length
+    });
     return <ProductDetailView 
       productId={selectedProductId as string} 
       onBack={handleBackToDashboard}
-      auctionType={selectedItem?.auctionType as "auction" | "fixed" | "both" || "auction"}
+      auctionType={selectedItem?.auctionType as "auction" | "retail" | "anti-pieces" || "auction"}
     />;
   }
 

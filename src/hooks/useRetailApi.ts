@@ -127,10 +127,10 @@ export function useRetailRecommendations(limit: number = 8) {
 /**
  * Hook to get retail product details
  */
-export function useRetailProduct(productId: string) {
+export function useRetailProduct(productId?: string) {
   return useQuery({
-    queryKey: retailQueryKeys.product(productId),
-    queryFn: () => retailApi.getProduct(productId),
+    queryKey: retailQueryKeys.product(productId || ''),
+    queryFn: () => retailApi.getProduct(productId!),
     enabled: !!productId,
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 15 * 60 * 1000, // 15 minutes

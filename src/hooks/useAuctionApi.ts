@@ -98,10 +98,10 @@ export function useSearchAuctionProducts(
 /**
  * Hook to get auction product details
  */
-export function useAuctionProduct(productId: string) {
+export function useAuctionProduct(productId?: string) {
   return useQuery({
-    queryKey: auctionQueryKeys.product(productId),
-    queryFn: () => auctionApi.getProduct(productId),
+    queryKey: auctionQueryKeys.product(productId || ''),
+    queryFn: () => auctionApi.getProduct(productId!),
     enabled: !!productId,
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 15 * 60 * 1000, // 15 minutes
