@@ -122,7 +122,7 @@ const productSchema = new mongoose.Schema({
   // Status & Metadata
   status: {
     type: String,
-    enum: ['active', 'inactive', 'archived', 'pending_review'],
+    enum: ['active', 'inactive', 'archived', 'pending_review', 'rejected'],
     default: 'pending_review'
   },
   isFeatured: {
@@ -135,7 +135,27 @@ const productSchema = new mongoose.Schema({
   },
   isActive: {
     type: Boolean,
-    default: true
+    default: false // Changed to false so products need admin approval
+  },
+  
+  // Admin Approval Fields
+  approvedAt: {
+    type: Date
+  },
+  approvedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  },
+  rejectedAt: {
+    type: Date
+  },
+  rejectedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  },
+  rejectionReason: {
+    type: String,
+    maxlength: [500, 'Rejection reason cannot exceed 500 characters']
   }
 }, {
   timestamps: true,

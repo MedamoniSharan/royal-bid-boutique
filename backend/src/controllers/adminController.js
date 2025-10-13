@@ -1,7 +1,56 @@
 import { AppError, catchAsync } from '../middleware/errorHandler.js';
 
 export const getDashboardStats = catchAsync(async (req, res, next) => {
-  res.json({ success: true, message: 'Dashboard stats endpoint - requires all models', data: { stats: {} } });
+  try {
+    const Product = (await import('../models/Product.js')).default;
+    const User = (await import('../models/User.js')).default;
+    
+    // Get total users
+    const totalUsers = await User.countDocuments();
+    
+    // Get total products
+    const totalProducts = await Product.countDocuments();
+    
+    // Get pending products
+    const pendingProducts = await Product.countDocuments({ status: 'pending_review' });
+    
+    // Get active products
+    const activeProducts = await Product.countDocuments({ status: 'active', isActive: true });
+    
+    // Get total auctions (from Product model with auctionType: 'Auction')
+    const totalAuctions = await Product.countDocuments({ auctionType: 'Auction' });
+    
+    // Get active auctions
+    const activeAuctions = await Product.countDocuments({ 
+      auctionType: 'Auction', 
+      status: 'active', 
+      isActive: true 
+    });
+    
+    // Get revenue stats (placeholder - would need Payment model)
+    const totalRevenue = 0;
+    const monthlyRevenue = 0;
+    
+    const stats = {
+      totalUsers,
+      totalProducts,
+      pendingProducts,
+      activeProducts,
+      totalAuctions,
+      activeAuctions,
+      totalRevenue,
+      monthlyRevenue
+    };
+    
+    res.json({ 
+      success: true, 
+      message: 'Dashboard stats retrieved successfully', 
+      stats 
+    });
+  } catch (error) {
+    console.error('Admin dashboard stats error:', error);
+    next(error);
+  }
 });
 
 export const getUsers = catchAsync(async (req, res, next) => {
@@ -89,19 +138,157 @@ export const deleteCategory = catchAsync(async (req, res, next) => {
 });
 
 export const getProducts = catchAsync(async (req, res, next) => {
-  res.json({ success: true, message: 'Admin products endpoint - requires Product model', data: { products: [] } });
+  const Product = (await import('../models/Product.js')).default;
+  const User = (await import('../models/User.js')).default;
+  
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 20;
+  const skip = (page - 1) * limit;
+  
+  const query = {};
+  
+  // Filter by status if provided
+  if (req.query.status) {
+    query.status = req.query.status;
+  }
+  
+  // Filter by auction type if provided
+  if (req.query.auctionType) {
+    query.auctionType = req.query.auctionType;
+  }
+  
+  const products = await Product.find(query)
+    .populate('seller', 'firstName lastName email')
+    .sort({ createdAt: -1 })
+    .skip(skip)
+    .limit(limit)
+    .select('-__v');
+    
+  const total = await Product.countDocuments(query);
+  
+  res.json({
+    success: true,
+    message: 'Products retrieved successfully',
+    products,
+    pagination: {
+      page,
+      limit,
+      total,
+      pages: Math.ceil(total / limit)
+    }
+  });
 });
 
 export const getProduct = catchAsync(async (req, res, next) => {
-  res.json({ success: true, message: 'Admin get product endpoint - requires Product model', data: { product: null } });
+  const Product = (await import('../models/Product.js')).default;
+  
+  const product = await Product.findById(req.params.id)
+    .populate('seller', 'firstName lastName email avatar')
+    .select('-__v');
+    
+  if (!product) {
+    return next(new AppError('Product not found', 404));
+  }
+  
+  res.json({
+    success: true,
+    message: 'Product retrieved successfully',
+    product
+  });
 });
 
 export const updateProduct = catchAsync(async (req, res, next) => {
-  res.json({ success: true, message: 'Admin update product endpoint - requires Product model' });
+  const Product = (await import('../models/Product.js')).default;
+  
+  const product = await Product.findByIdAndUpdate(
+    req.params.id,
+    req.body,
+    { new: true, runValidators: true }
+  ).populate('seller', 'firstName lastName email');
+  
+  if (!product) {
+    return next(new AppError('Product not found', 404));
+  }
+  
+  res.json({
+    success: true,
+    message: 'Product updated successfully',
+    product
+  });
 });
 
 export const deleteProduct = catchAsync(async (req, res, next) => {
-  res.json({ success: true, message: 'Admin delete product endpoint - requires Product model' });
+  const Product = (await import('../models/Product.js')).default;
+  
+  const product = await Product.findByIdAndDelete(req.params.id);
+  
+  if (!product) {
+    return next(new AppError('Product not found', 404));
+  }
+  
+  res.json({
+    success: true,
+    message: 'Product deleted successfully'
+  });
+});
+
+// New function to approve a product
+export const approveProduct = catchAsync(async (req, res, next) => {
+  const Product = (await import('../models/Product.js')).default;
+  
+  const product = await Product.findByIdAndUpdate(
+    req.params.id,
+    { 
+      status: 'active',
+      isActive: true,
+      approvedAt: new Date(),
+      approvedBy: req.user.id
+    },
+    { new: true, runValidators: true }
+  ).populate('seller', 'firstName lastName email');
+  
+  if (!product) {
+    return next(new AppError('Product not found', 404));
+  }
+  
+  res.json({
+    success: true,
+    message: 'Product approved successfully',
+    product
+  });
+});
+
+// New function to reject a product
+export const rejectProduct = catchAsync(async (req, res, next) => {
+  const Product = (await import('../models/Product.js')).default;
+  
+  const { reason } = req.body;
+  
+  if (!reason || reason.trim().length === 0) {
+    return next(new AppError('Rejection reason is required', 400));
+  }
+  
+  const product = await Product.findByIdAndUpdate(
+    req.params.id,
+    { 
+      status: 'rejected',
+      isActive: false,
+      rejectionReason: reason.trim(),
+      rejectedAt: new Date(),
+      rejectedBy: req.user.id
+    },
+    { new: true, runValidators: true }
+  ).populate('seller', 'firstName lastName email');
+  
+  if (!product) {
+    return next(new AppError('Product not found', 404));
+  }
+  
+  res.json({
+    success: true,
+    message: 'Product rejected successfully',
+    product
+  });
 });
 
 export const getReports = catchAsync(async (req, res, next) => {

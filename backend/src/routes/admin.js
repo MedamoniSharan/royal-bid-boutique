@@ -27,6 +27,8 @@ import {
   getProduct,
   updateProduct,
   deleteProduct,
+  approveProduct,
+  rejectProduct,
   getReports,
   getReport,
   resolveReport,
@@ -291,6 +293,24 @@ router.put('/products/:id',
 router.delete('/products/:id',
   validateObjectId(),
   deleteProduct
+);
+
+router.put('/products/:id/approve',
+  validateObjectId(),
+  approveProduct
+);
+
+router.put('/products/:id/reject',
+  validateObjectId(),
+  [
+    body('reason')
+      .trim()
+      .notEmpty()
+      .withMessage('Rejection reason is required')
+      .isLength({ max: 500 })
+      .withMessage('Reason cannot exceed 500 characters')
+  ],
+  rejectProduct
 );
 
 // Report Management

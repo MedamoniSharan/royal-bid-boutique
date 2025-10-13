@@ -22,13 +22,16 @@ import notFound from './middleware/notFound.js';
 // Import routes
 import authRoutes from './routes/auth.js';
 import userRoutes from './routes/users.js';
-import auctionRoutes from './routes/auctions.js';
+// import auctionRoutes from './routes/auctions.js'; // Temporarily disabled - using new auction API
 import bidRoutes from './routes/bids.js';
 import productRoutes from './routes/products.js';
 import categoryRoutes from './routes/categories.js';
 import paymentRoutes from './routes/payments.js';
 import notificationRoutes from './routes/notifications.js';
 import adminRoutes from './routes/admin.js';
+import retailRoutes from './routes/retail.js';
+import auctionApiRoutes from './routes/auction.js';
+import antiPiecesRoutes from './routes/antiPieces.js';
 
 // Load environment variables
 dotenv.config();
@@ -122,13 +125,16 @@ app.get('/health', (req, res) => {
 // API routes
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
-app.use('/api/auctions', auctionRoutes);
+// app.use('/api/auctions', auctionRoutes); // Temporarily disabled - using new auction API
 app.use('/api/bids', bidRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/retail', retailRoutes);
+app.use('/api/auction', auctionApiRoutes);
+app.use('/api/anti-pieces', antiPiecesRoutes);
 
 // Socket.io connection handling
 io.on('connection', (socket) => {
