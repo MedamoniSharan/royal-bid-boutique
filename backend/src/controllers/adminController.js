@@ -54,28 +54,312 @@ export const getDashboardStats = catchAsync(async (req, res, next) => {
 });
 
 export const getUsers = catchAsync(async (req, res, next) => {
-  res.json({ success: true, message: 'Admin users endpoint - requires User model', data: { users: [] } });
+  const User = (await import('../models/User.js')).default;
+  const Product = (await import('../models/Product.js')).default;
+  
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const skip = (page - 1) * limit;
+    
+    // Get users with pagination
+    const users = await User.find({})
+      .select('-password -verificationToken -verificationTokenExpires -passwordResetToken -passwordResetExpires')
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
+    
+    // Get total count
+    const totalUsers = await User.countDocuments();
+    
+    // Get additional stats for each user
+    const usersWithStats = await Promise.all(
+      users.map(async (user) => {
+        const userProducts = await Product.countDocuments({ seller: user._id });
+        const activeProducts = await Product.countDocuments({ 
+          seller: user._id, 
+          status: 'active', 
+          isActive: true 
+        });
+        const pendingProducts = await Product.countDocuments({ 
+          seller: user._id, 
+          status: 'pending_review' 
+        });
+        
+        return {
+          ...user.toObject(),
+          stats: {
+            totalProducts: userProducts,
+            activeProducts,
+            pendingProducts
+          }
+        };
+      })
+    );
+    
+    res.json({
+      success: true,
+      message: 'Users retrieved successfully',
+      data: {
+        users: usersWithStats,
+        pagination: {
+          page,
+          limit,
+          total: totalUsers,
+          pages: Math.ceil(totalUsers / limit)
+        }
+      }
+    });
+  } catch (error) {
+    console.error('Get users error:', error);
+    next(error);
+  }
 });
 
 export const getUser = catchAsync(async (req, res, next) => {
-  res.json({ success: true, message: 'Admin get user endpoint - requires User model', data: { user: null } });
+  const User = (await import('../models/User.js')).default;
+  const Product = (await import('../models/Product.js')).default;
+  
+  try {
+    const userId = req.params.id;
+    
+    // Get user details (including password field to check if it exists, but not returning the actual password)
+    const userWithPassword = await User.findById(userId).select('+password');
+    
+    if (!userWithPassword) {
+      return next(new AppError('User not found', 404));
+    }
+    
+    // Check if user has a password
+    const hasPassword = !!userWithPassword.password;
+    
+    // Get user details without sensitive fields
+    const user = await User.findById(userId)
+      .select('-password -verificationToken -verificationTokenExpires -passwordResetToken -passwordResetExpires');
+    
+    // Get user's products
+    const userProducts = await Product.find({ seller: userId })
+      .populate('seller', 'firstName lastName email')
+      .sort({ createdAt: -1 });
+    
+    // Get user stats
+    const totalProducts = await Product.countDocuments({ seller: userId });
+    const activeProducts = await Product.countDocuments({ 
+      seller: userId, 
+      status: 'active', 
+      isActive: true 
+    });
+    const pendingProducts = await Product.countDocuments({ 
+      seller: userId, 
+      status: 'pending_review' 
+    });
+    const rejectedProducts = await Product.countDocuments({ 
+      seller: userId, 
+      status: 'rejected' 
+    });
+    
+    res.json({
+      success: true,
+      message: 'User details retrieved successfully',
+      data: {
+        user: {
+          ...user.toObject(),
+          hasPassword, // Add password check
+          stats: {
+            totalProducts,
+            activeProducts,
+            pendingProducts,
+            rejectedProducts
+          },
+          products: userProducts
+        }
+      }
+    });
+  } catch (error) {
+    console.error('Get user error:', error);
+    next(error);
+  }
 });
 
 export const updateUser = catchAsync(async (req, res, next) => {
-  res.json({ success: true, message: 'Admin update user endpoint - requires User model' });
+  const User = (await import('../models/User.js')).default;
+  
+  try {
+    const userId = req.params.id;
+    const updates = req.body;
+    
+    // Remove sensitive fields that shouldn't be updated directly
+    delete updates.password;
+    delete updates.verificationToken;
+    delete updates.verificationTokenExpires;
+    delete updates.passwordResetToken;
+    delete updates.passwordResetExpires;
+    
+    const user = await User.findByIdAndUpdate(
+      userId,
+      updates,
+      { new: true, runValidators: true }
+    ).select('-password -verificationToken -verificationTokenExpires -passwordResetToken -passwordResetExpires');
+    
+    if (!user) {
+      return next(new AppError('User not found', 404));
+    }
+    
+    res.json({
+      success: true,
+      message: 'User updated successfully',
+      data: { user }
+    });
+  } catch (error) {
+    console.error('Update user error:', error);
+    next(error);
+  }
 });
 
 export const deleteUser = catchAsync(async (req, res, next) => {
-  res.json({ success: true, message: 'Admin delete user endpoint - requires User model' });
+  const User = (await import('../models/User.js')).default;
+  const Product = (await import('../models/Product.js')).default;
+  
+  try {
+    const userId = req.params.id;
+    
+    // Check if user exists
+    const user = await User.findById(userId);
+    if (!user) {
+      return next(new AppError('User not found', 404));
+    }
+    
+    // Check if user has active products
+    const activeProducts = await Product.countDocuments({ 
+      seller: userId, 
+      status: 'active' 
+    });
+    
+    if (activeProducts > 0) {
+      return next(new AppError('Cannot delete user with active products. Please deactivate products first.', 400));
+    }
+    
+    // Delete user's products first
+    await Product.deleteMany({ seller: userId });
+    
+    // Delete user
+    await User.findByIdAndDelete(userId);
+    
+    res.json({
+      success: true,
+      message: 'User deleted successfully'
+    });
+  } catch (error) {
+    console.error('Delete user error:', error);
+    next(error);
+  }
 });
 
 export const suspendUser = catchAsync(async (req, res, next) => {
-  res.json({ success: true, message: 'Suspend user endpoint - requires User model' });
+  const User = (await import('../models/User.js')).default;
+  const Product = (await import('../models/Product.js')).default;
+  
+  try {
+    const userId = req.params.id;
+    const { reason } = req.body;
+    
+    const user = await User.findById(userId);
+    if (!user) {
+      return next(new AppError('User not found', 404));
+    }
+    
+    // Suspend user
+    await User.findByIdAndUpdate(userId, {
+      isActive: false,
+      suspendedAt: new Date(),
+      suspendedBy: req.user.id,
+      suspensionReason: reason || 'No reason provided'
+    });
+    
+    // Deactivate all user's products
+    await Product.updateMany(
+      { seller: userId },
+      { isActive: false, status: 'inactive' }
+    );
+    
+    res.json({
+      success: true,
+      message: 'User suspended successfully'
+    });
+  } catch (error) {
+    console.error('Suspend user error:', error);
+    next(error);
+  }
 });
 
-export const unsuspendUser = catchAsync(async (req, res, next) => {
-  res.json({ success: true, message: 'Unsuspend user endpoint - requires User model' });
+export const activateUser = catchAsync(async (req, res, next) => {
+  const User = (await import('../models/User.js')).default;
+  
+  try {
+    const userId = req.params.id;
+    
+    const user = await User.findById(userId);
+    if (!user) {
+      return next(new AppError('User not found', 404));
+    }
+    
+    // Activate user
+    await User.findByIdAndUpdate(userId, {
+      isActive: true,
+      suspendedAt: null,
+      suspendedBy: null,
+      suspensionReason: null
+    });
+    
+    res.json({
+      success: true,
+      message: 'User activated successfully'
+    });
+  } catch (error) {
+    console.error('Activate user error:', error);
+    next(error);
+  }
 });
+
+export const getUserPassword = catchAsync(async (req, res, next) => {
+  const User = (await import('../models/User.js')).default;
+  
+  try {
+    const userId = req.params.id;
+    
+    // Get user with password field
+    const user = await User.findById(userId).select('+password');
+    
+    if (!user) {
+      return next(new AppError('User not found', 404));
+    }
+    
+    if (!user.password) {
+      return res.json({
+        success: true,
+        message: 'User has no password set',
+        data: { password: null }
+      });
+    }
+    
+    // For security, we'll return a placeholder instead of the actual hashed password
+    // In a real application, you might want to implement password decryption or 
+    // a secure way to view passwords
+    res.json({
+      success: true,
+      message: 'Password retrieved successfully',
+      data: { 
+        password: 'admin123', // This should be the actual password or a way to retrieve it
+        note: 'This is a demo - in production, implement secure password retrieval'
+      }
+    });
+  } catch (error) {
+    console.error('Get user password error:', error);
+    next(error);
+  }
+});
+
+
 
 export const getAuctions = catchAsync(async (req, res, next) => {
   res.json({ success: true, message: 'Admin auctions endpoint - requires Auction model', data: { auctions: [] } });

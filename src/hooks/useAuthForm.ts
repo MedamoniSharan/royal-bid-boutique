@@ -11,7 +11,8 @@ export const useAuthForm = () => {
     try {
       setError(null);
       setIsSubmitting(true);
-      await login(credentials);
+      const result = await login(credentials);
+      return result;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login failed');
       throw err;

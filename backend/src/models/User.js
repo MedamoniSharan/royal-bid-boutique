@@ -51,6 +51,12 @@ const userSchema = new mongoose.Schema({
   verificationTokenExpires: Date,
   passwordResetToken: String,
   passwordResetExpires: Date,
+  suspendedAt: Date,
+  suspendedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  },
+  suspensionReason: String,
   address: {
     street: String,
     city: String,

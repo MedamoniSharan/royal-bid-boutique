@@ -204,7 +204,7 @@ const mockProduct: ProductDetail = {
   ]
 };
 
-export default function ProductDetailView({ productId, onBack, auctionType = "auction" }: { productId: number, onBack: () => void, auctionType?: "auction" | "fixed" | "both" }) {
+export default function ProductDetailView({ productId, onBack, auctionType = "auction" }: { productId: string | number, onBack: () => void, auctionType?: "auction" | "fixed" | "both" }) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const navigate = useNavigate();

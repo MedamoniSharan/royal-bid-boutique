@@ -18,11 +18,19 @@ import {
   Heart,
   Plus,
   Eye,
-  Home
+  Home,
+  Loader2,
+  AlertCircle
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import ProductListingForm from "@/components/ProductListingForm";
 import ProductDetailView from "@/components/ProductDetailView";
+import { useRetailProducts, useRetailDashboardStats } from "@/hooks/useRetailApi";
+import { useAuctionProducts, useAuctionDashboardStats } from "@/hooks/useAuctionApi";
+import { useAntiPiecesProducts, useAntiPiecesDashboardStats } from "@/hooks/useAntiPiecesApi";
+import { RetailProduct } from "@/utils/retailApi";
+import { AuctionProduct } from "@/utils/auctionApi";
+import { AntiPiecesProduct } from "@/utils/antiPiecesApi";
 
 type SidebarSection = 'auction' | 'retail' | 'anti-pieces';
 type UserMode = 'buy' | 'sell';
@@ -34,7 +42,62 @@ export default function Dashboard() {
   const [activeSection, setActiveSection] = useState<SidebarSection>('auction');
   const [userMode, setUserMode] = useState<UserMode>('buy');
   const [showProductForm, setShowProductForm] = useState(false);
-  const [selectedProductId, setSelectedProductId] = useState<number | null>(null);
+  const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
+
+  // Fetch retail products from API
+  const { 
+    data: retailData, 
+    isLoading: retailLoading, 
+    error: retailError,
+    refetch: refetchRetailProducts
+  } = useRetailProducts({
+    page: 1,
+    limit: 12,
+    sort: 'newest'
+  });
+
+
+  // Fetch retail dashboard stats
+  const { 
+    data: retailStats, 
+    isLoading: retailStatsLoading 
+  } = useRetailDashboardStats();
+
+  // Fetch auction products from API
+  const { 
+    data: auctionData, 
+    isLoading: auctionLoading, 
+    error: auctionError,
+    refetch: refetchAuctionProducts
+  } = useAuctionProducts({
+    page: 1,
+    limit: 12,
+    sort: 'newest'
+  });
+
+  // Fetch auction dashboard stats
+  const { 
+    data: auctionStats, 
+    isLoading: auctionStatsLoading 
+  } = useAuctionDashboardStats();
+
+  // Fetch anti-pieces products from API
+  const { 
+    data: antiPiecesData, 
+    isLoading: antiPiecesLoading, 
+    error: antiPiecesError,
+    refetch: refetchAntiPiecesProducts
+  } = useAntiPiecesProducts({
+    page: 1,
+    limit: 12,
+    sort: 'newest'
+  });
+
+  // Fetch anti-pieces dashboard stats
+  const { 
+    data: antiPiecesStats, 
+    isLoading: antiPiecesStatsLoading 
+  } = useAntiPiecesDashboardStats();
 
   // Handle navigation state from various sections
   useEffect(() => {
@@ -52,7 +115,7 @@ export default function Dashboard() {
     return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
   };
 
-  const handleProductClick = (productId: number) => {
+  const handleProductClick = (productId: string) => {
     setSelectedProductId(productId);
   };
 
@@ -81,31 +144,81 @@ export default function Dashboard() {
     }
   ];
 
+  // Transform retail product data to match the expected format
+  const transformRetailProduct = (product: RetailProduct) => ({
+    id: product._id,
+    title: product.title,
+    description: product.description,
+    price: product.discount > 0 ? product.price * (1 - product.discount / 100) : product.price,
+    originalPrice: product.discount > 0 ? product.price : undefined,
+    stock: product.stocks || 0,
+    category: product.category,
+    image: product.images?.[0]?.url || product.primaryImage?.url || "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=400&h=400&fit=crop",
+    status: product.stocks > 0 ? "available" : "out_of_stock",
+    auctionType: "fixed" as const,
+    discount: product.discount,
+    condition: product.condition,
+    brand: product.brand,
+    model: product.model,
+    viewCount: product.viewCount,
+    seller: product.seller
+  });
+
+  // Transform auction product data to match the expected format
+  const transformAuctionProduct = (product: AuctionProduct) => ({
+    id: product._id,
+    title: product.title,
+    description: product.description,
+    currentBid: product.startingBid,
+    nextBid: product.startingBid + 100, // Mock next bid
+    bids: Math.floor(Math.random() * 50) + 1, // Mock bid count
+    timeLeft: product.timeLeft ? `${Math.floor(product.timeLeft / (1000 * 60 * 60))}h ${Math.floor((product.timeLeft % (1000 * 60 * 60)) / (1000 * 60))}m` : "2h 45m",
+    category: product.category,
+    image: product.images?.[0]?.url || product.primaryImage?.url || "https://images.unsplash.com/photo-1522312346375-d1a52e2b99b3?w=400&h=400&fit=crop",
+    status: product.auctionStatus === 'live' ? "live" : "ended",
+    auctionType: "auction" as const,
+    condition: product.condition,
+    brand: product.brand,
+    model: product.model,
+    viewCount: product.viewCount,
+    seller: product.seller
+  });
+
+  // Transform anti-pieces product data to match the expected format
+  const transformAntiPiecesProduct = (product: AntiPiecesProduct) => ({
+    id: product._id,
+    title: product.title,
+    description: product.description,
+    price: product.discount > 0 ? product.price * (1 - product.discount / 100) : product.price,
+    originalPrice: product.discount > 0 ? product.price : undefined,
+    age: product.age || "Vintage",
+    category: product.category,
+    image: product.images?.[0]?.url || product.primaryImage?.url || "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=400&fit=crop",
+    status: "antique",
+    auctionType: "fixed" as const,
+    discount: product.discount,
+    condition: product.condition,
+    brand: product.brand,
+    model: product.model,
+    viewCount: product.viewCount,
+    seller: product.seller
+  });
+
+
+  // Dynamic data from APIs
   const mockItems = {
-    auction: [
-      { id: 1, title: "Vintage Rolex Submariner", description: "1960s Classic Diving Watch", currentBid: 15500, nextBid: 16000, bids: 23, timeLeft: "2h 45m", category: "Watches", image: "https://images.unsplash.com/photo-1522312346375-d1a52e2b99b3?w=400&h=400&fit=crop", status: "live", auctionType: "auction" },
-      { id: 2, title: "Rare Pokémon Card Set", description: "1st Edition Base Set Charizard", currentBid: 8900, nextBid: 9500, bids: 45, timeLeft: "5h 12m", category: "Collectibles", image: "https://images.unsplash.com/photo-1606107557195-0e29a4b5b4aa?w=400&h=400&fit=crop", status: "hot", auctionType: "auction" },
-      { id: 3, title: "Abstract Oil Painting", description: "Original Contemporary Art Piece", currentBid: 3200, nextBid: 3500, bids: 12, timeLeft: "1d 8h", category: "Art", image: "https://images.unsplash.com/photo-1541961017774-22349e4a1262?w=400&h=400&fit=crop", status: "upcoming", auctionType: "auction" }
-    ],
-    retail: [
-      { id: 1, title: "Designer Handbag", description: "Luxury Leather Handbag", price: 1200, stock: 5, category: "Fashion", image: "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=400&h=400&fit=crop", status: "available", auctionType: "fixed" },
-      { id: 2, title: "Smart Watch", description: "Latest Technology Smart Watch", price: 299, stock: 12, category: "Electronics", image: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&h=400&fit=crop", status: "available", auctionType: "fixed" },
-      { id: 3, title: "Artisan Jewelry", description: "Handcrafted Premium Jewelry", price: 450, stock: 8, category: "Accessories", image: "https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=400&h=400&fit=crop", status: "available", auctionType: "fixed" }
-    ],
-    'anti-pieces': [
-      { id: 1, title: "Antique Vase", description: "18th Century Ceramic Vase", price: 800, age: "18th Century", category: "Ceramics", image: "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=400&fit=crop", status: "antique", auctionType: "fixed" },
-      { id: 2, title: "Vintage Book Collection", description: "Rare 19th Century Literature", price: 1200, age: "19th Century", category: "Books", image: "https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=400&h=400&fit=crop", status: "antique", auctionType: "fixed" },
-      { id: 3, title: "Classic Pocket Watch", description: "Vintage 1920s Timepiece", price: 650, age: "1920s", category: "Timepieces", image: "https://images.unsplash.com/photo-1524592094714-0f0654e20314?w=400&h=400&fit=crop", status: "antique", auctionType: "fixed" }
-    ]
+    auction: auctionData?.products?.map(transformAuctionProduct) || [],
+    retail: retailData?.products?.map(transformRetailProduct) || [],
+    'anti-pieces': antiPiecesData?.products?.map(transformAntiPiecesProduct) || []
   };
 
   const currentItems = mockItems[activeSection];
 
   // If a product is selected, show the detail view
   if (selectedProductId) {
-    const selectedItem = currentItems.find(item => item.id === selectedProductId);
+    const selectedItem = currentItems.find(item => item.id.toString() === selectedProductId);
     return <ProductDetailView 
-      productId={selectedProductId} 
+      productId={selectedProductId as string} 
       onBack={handleBackToDashboard}
       auctionType={selectedItem?.auctionType as "auction" | "fixed" | "both" || "auction"}
     />;
@@ -221,6 +334,21 @@ export default function Dashboard() {
                 </Button>
               </div>
               
+              {/* Refresh Button */}
+              <Button 
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  if (activeSection === 'retail') refetchRetailProducts();
+                  else if (activeSection === 'auction') refetchAuctionProducts();
+                  else if (activeSection === 'anti-pieces') refetchAntiPiecesProducts();
+                }}
+                disabled={retailLoading || auctionLoading || antiPiecesLoading}
+              >
+                <Eye className="w-4 h-4 mr-2" />
+                {retailLoading || auctionLoading || antiPiecesLoading ? 'Refreshing...' : 'Refresh'}
+              </Button>
+              
               {/* Add Product Button - only show in sell mode */}
               {userMode === 'sell' && (
                 <Button 
@@ -237,8 +365,383 @@ export default function Dashboard() {
 
         {/* Content Area */}
         <div className="flex-1 p-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {currentItems.map((item) => (
+
+          {/* Dashboard Stats - Show when in sell mode */}
+          {userMode === 'sell' && (
+            <>
+              {/* Retail Dashboard Stats */}
+              {activeSection === 'retail' && retailStats && (
+            <div className="mb-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div className="bg-card border border-border rounded-lg p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Your Products</p>
+                    <p className="text-2xl font-bold text-foreground">
+                      {retailStats.data.overview.userRetailProducts}
+                    </p>
+                  </div>
+                  <Package className="w-8 h-8 text-blue-600" />
+                </div>
+              </div>
+              
+              <div className="bg-card border border-border rounded-lg p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Total Value</p>
+                    <p className="text-2xl font-bold text-foreground">
+                      ${retailStats.data.overview.totalValue.toLocaleString()}
+                    </p>
+                  </div>
+                  <DollarSign className="w-8 h-8 text-green-600" />
+                </div>
+              </div>
+              
+              <div className="bg-card border border-border rounded-lg p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Average Price</p>
+                    <p className="text-2xl font-bold text-foreground">
+                      ${retailStats.data.overview.averagePrice.toLocaleString()}
+                    </p>
+                  </div>
+                  <TrendingUp className="w-8 h-8 text-purple-600" />
+                </div>
+              </div>
+              
+              <div className="bg-card border border-border rounded-lg p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Total Products</p>
+                    <p className="text-2xl font-bold text-foreground">
+                      {retailStats.data.overview.totalRetailProducts}
+                    </p>
+                  </div>
+                  <ShoppingBag className="w-8 h-8 text-crimson" />
+                </div>
+              </div>
+            </div>
+          )}
+
+              {/* Auction Dashboard Stats */}
+              {activeSection === 'auction' && auctionStats && (
+                <div className="mb-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                  <div className="bg-card border border-border rounded-lg p-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">Your Auctions</p>
+                        <p className="text-2xl font-bold text-foreground">
+                          {auctionStats.data.overview.userAuctionProducts}
+                        </p>
+                      </div>
+                      <Gavel className="w-8 h-8 text-crimson" />
+                    </div>
+                  </div>
+                  
+                  <div className="bg-card border border-border rounded-lg p-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">Total Value</p>
+                        <p className="text-2xl font-bold text-foreground">
+                          ${auctionStats.data.overview.totalValue.toLocaleString()}
+                        </p>
+                      </div>
+                      <DollarSign className="w-8 h-8 text-green-600" />
+                    </div>
+                  </div>
+                  
+                  <div className="bg-card border border-border rounded-lg p-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">Avg Starting Bid</p>
+                        <p className="text-2xl font-bold text-foreground">
+                          ${auctionStats.data.overview.averageStartingBid.toLocaleString()}
+                        </p>
+                      </div>
+                      <TrendingUp className="w-8 h-8 text-purple-600" />
+                    </div>
+                  </div>
+                  
+                  <div className="bg-card border border-border rounded-lg p-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">Total Auctions</p>
+                        <p className="text-2xl font-bold text-foreground">
+                          {auctionStats.data.overview.totalAuctionProducts}
+                        </p>
+                      </div>
+                      <Gavel className="w-8 h-8 text-crimson" />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Anti-Pieces Dashboard Stats */}
+              {activeSection === 'anti-pieces' && antiPiecesStats && (
+                <div className="mb-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                  <div className="bg-card border border-border rounded-lg p-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">Your Antiques</p>
+                        <p className="text-2xl font-bold text-foreground">
+                          {antiPiecesStats.data.overview.userAntiPiecesProducts}
+                        </p>
+                      </div>
+                      <Clock className="w-8 h-8 text-purple-600" />
+                    </div>
+                  </div>
+                  
+                  <div className="bg-card border border-border rounded-lg p-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">Total Value</p>
+                        <p className="text-2xl font-bold text-foreground">
+                          ${antiPiecesStats.data.overview.totalValue.toLocaleString()}
+                        </p>
+                      </div>
+                      <DollarSign className="w-8 h-8 text-green-600" />
+                    </div>
+                  </div>
+                  
+                  <div className="bg-card border border-border rounded-lg p-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">Average Price</p>
+                        <p className="text-2xl font-bold text-foreground">
+                          ${antiPiecesStats.data.overview.averagePrice.toLocaleString()}
+                        </p>
+                      </div>
+                      <TrendingUp className="w-8 h-8 text-purple-600" />
+                    </div>
+                  </div>
+                  
+                  <div className="bg-card border border-border rounded-lg p-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">Total Antiques</p>
+                        <p className="text-2xl font-bold text-foreground">
+                          {antiPiecesStats.data.overview.totalAntiPiecesProducts}
+                        </p>
+                      </div>
+                      <Clock className="w-8 h-8 text-purple-600" />
+                    </div>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+
+          {/* Loading States */}
+          {activeSection === 'retail' && retailLoading && (
+            <div className="flex items-center justify-center py-12">
+              <div className="text-center">
+                <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-crimson" />
+                <p className="text-muted-foreground">Loading retail products...</p>
+              </div>
+            </div>
+          )}
+
+          {activeSection === 'auction' && auctionLoading && (
+            <div className="flex items-center justify-center py-12">
+              <div className="text-center">
+                <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-crimson" />
+                <p className="text-muted-foreground">Loading auction products...</p>
+              </div>
+            </div>
+          )}
+
+          {activeSection === 'anti-pieces' && antiPiecesLoading && (
+            <div className="flex items-center justify-center py-12">
+              <div className="text-center">
+                <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-purple-600" />
+                <p className="text-muted-foreground">Loading anti-pieces products...</p>
+              </div>
+            </div>
+          )}
+
+          {/* Error States */}
+          {activeSection === 'retail' && retailError && (
+            <div className="flex items-center justify-center py-12">
+              <div className="text-center">
+                <AlertCircle className="w-8 h-8 mx-auto mb-4 text-red-500" />
+                <p className="text-red-500 mb-2">Failed to load retail products</p>
+                <p className="text-muted-foreground text-sm mb-4">
+                  {retailError instanceof Error ? retailError.message : 'An error occurred'}
+                </p>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => refetchRetailProducts()}
+                >
+                  Try Again
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {activeSection === 'auction' && auctionError && (
+            <div className="flex items-center justify-center py-12">
+              <div className="text-center">
+                <AlertCircle className="w-8 h-8 mx-auto mb-4 text-red-500" />
+                <p className="text-red-500 mb-2">Failed to load auction products</p>
+                <p className="text-muted-foreground text-sm mb-4">
+                  {auctionError instanceof Error ? auctionError.message : 'An error occurred'}
+                </p>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => refetchAuctionProducts()}
+                >
+                  Try Again
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {activeSection === 'anti-pieces' && antiPiecesError && (
+            <div className="flex items-center justify-center py-12">
+              <div className="text-center">
+                <AlertCircle className="w-8 h-8 mx-auto mb-4 text-red-500" />
+                <p className="text-red-500 mb-2">Failed to load anti-pieces products</p>
+                <p className="text-muted-foreground text-sm mb-4">
+                  {antiPiecesError instanceof Error ? antiPiecesError.message : 'An error occurred'}
+                </p>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => refetchAntiPiecesProducts()}
+                >
+                  Try Again
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* Empty States */}
+          {activeSection === 'retail' && !retailLoading && !retailError && currentItems.length === 0 && (
+            <div className="flex items-center justify-center py-12">
+              <div className="text-center">
+                <ShoppingBag className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+                <h3 className="text-lg font-semibold mb-2">No retail products found</h3>
+                <p className="text-muted-foreground mb-4">
+                  {userMode === 'sell' ? 'Start by listing your first product!' : 'No products are currently available.'}
+                </p>
+                {userMode === 'sell' && (
+                  <Button 
+                    onClick={() => setShowProductForm(true)}
+                    className="bg-crimson hover:bg-crimson/90"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add Product
+                  </Button>
+                )}
+              </div>
+            </div>
+          )}
+
+          {activeSection === 'auction' && !auctionLoading && !auctionError && currentItems.length === 0 && (
+            <div className="flex items-center justify-center py-12">
+              <div className="text-center">
+                <Gavel className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+                <h3 className="text-lg font-semibold mb-2">No auction products found</h3>
+                <p className="text-muted-foreground mb-4">
+                  {userMode === 'sell' ? 'Start by creating your first auction!' : 'No auctions are currently available.'}
+                </p>
+                {userMode === 'sell' && (
+                  <Button 
+                    onClick={() => setShowProductForm(true)}
+                    className="bg-crimson hover:bg-crimson/90"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Create Auction
+                  </Button>
+                )}
+              </div>
+            </div>
+          )}
+
+          {activeSection === 'anti-pieces' && !antiPiecesLoading && !antiPiecesError && currentItems.length === 0 && (
+            <div className="flex items-center justify-center py-12">
+              <div className="text-center">
+                <Clock className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+                <h3 className="text-lg font-semibold mb-2">No anti-pieces found</h3>
+                <p className="text-muted-foreground mb-4">
+                  {userMode === 'sell' ? 'Start by listing your first antique!' : 'No antiques are currently available.'}
+                </p>
+                {userMode === 'sell' && (
+                  <Button 
+                    onClick={() => setShowProductForm(true)}
+                    className="bg-purple-600 hover:bg-purple-700"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add Antique
+                  </Button>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Products Grid */}
+          {((activeSection === 'retail' && !retailLoading && !retailError && currentItems.length > 0) ||
+            (activeSection === 'auction' && !auctionLoading && !auctionError && currentItems.length > 0) ||
+            (activeSection === 'anti-pieces' && !antiPiecesLoading && !antiPiecesError && currentItems.length > 0)) ? (
+            <div>
+              {/* Product Count Headers */}
+              {activeSection === 'retail' && retailData && (
+                <div className="mb-6 flex items-center justify-between">
+                  <div>
+                    <h2 className="text-xl font-semibold text-foreground">
+                      Retail Products
+                    </h2>
+                    <p className="text-muted-foreground">
+                      Showing {retailData?.products?.length || 0} of {retailData?.pagination?.total || 0} products
+                    </p>
+                  </div>
+                  {retailData?.pagination?.pages && retailData.pagination.pages > 1 && (
+                    <div className="text-sm text-muted-foreground">
+                      Page {retailData.pagination.page} of {retailData.pagination.pages}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {activeSection === 'auction' && auctionData && (
+                <div className="mb-6 flex items-center justify-between">
+                  <div>
+                    <h2 className="text-xl font-semibold text-foreground">
+                      Auction Products
+                    </h2>
+                    <p className="text-muted-foreground">
+                      Showing {auctionData?.products?.length || 0} of {auctionData?.pagination?.total || 0} auctions
+                    </p>
+                  </div>
+                  {auctionData?.pagination?.pages && auctionData.pagination.pages > 1 && (
+                    <div className="text-sm text-muted-foreground">
+                      Page {auctionData.pagination.page} of {auctionData.pagination.pages}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {activeSection === 'anti-pieces' && antiPiecesData && (
+                <div className="mb-6 flex items-center justify-between">
+                  <div>
+                    <h2 className="text-xl font-semibold text-foreground">
+                      Anti-Pieces
+                    </h2>
+                    <p className="text-muted-foreground">
+                      Showing {antiPiecesData?.products?.length || 0} of {antiPiecesData?.pagination?.total || 0} antiques
+                    </p>
+                  </div>
+                  {antiPiecesData?.pagination?.pages && antiPiecesData.pagination.pages > 1 && (
+                    <div className="text-sm text-muted-foreground">
+                      Page {antiPiecesData.pagination.page} of {antiPiecesData.pagination.pages}
+                    </div>
+                  )}
+                </div>
+              )}
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {currentItems.map((item) => (
               <div key={item.id}>
                 <ShimmerCard 
                   className="group border-border/50"
@@ -253,17 +756,21 @@ export default function Dashboard() {
                     />
                     <div className="absolute top-4 left-4">
                       <Badge 
-                        variant={item.status === 'live' ? 'destructive' : item.status === 'hot' ? 'default' : item.status === 'available' ? 'default' : 'secondary'}
+                        variant={item.status === 'live' ? 'destructive' : item.status === 'hot' ? 'default' : item.status === 'available' ? 'default' : item.status === 'out_of_stock' ? 'destructive' : 'secondary'}
                         className={`
                           ${item.status === 'live' ? 'bg-crimson text-white animate-pulse' : ''}
                           ${item.status === 'hot' ? 'bg-gold text-charcoal' : ''}
-                          ${item.status === 'available' ? 'bg-blue-600 text-white' : ''}
+                          ${item.status === 'available' ? 'bg-green-600 text-white' : ''}
+                          ${item.status === 'out_of_stock' ? 'bg-red-600 text-white' : ''}
                           ${item.status === 'antique' ? 'bg-purple-600 text-white' : ''}
                           ${item.status === 'upcoming' ? 'bg-muted' : ''}
                         `}
                       >
                         {item.status === 'live' && <div className="w-2 h-2 bg-white rounded-full mr-2 animate-pulse" />}
-                        {item.status === 'available' ? 'IN STOCK' : item.status === 'antique' ? 'ANTIQUE' : item.status.toUpperCase()}
+                        {item.status === 'available' ? 'IN STOCK' : 
+                         item.status === 'out_of_stock' ? 'OUT OF STOCK' :
+                         item.status === 'antique' ? 'ANTIQUE' : 
+                         item.status.toUpperCase()}
                       </Badge>
                     </div>
                     <div className="absolute top-4 right-4">
@@ -322,9 +829,27 @@ export default function Dashboard() {
                       </>
                     )}
                     {(activeSection === 'retail' || activeSection === 'anti-pieces') && (
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm text-muted-foreground">Price</span>
-                        <span className="text-2xl font-bold text-foreground">${item.price?.toLocaleString()}</span>
+                      <div className="space-y-1">
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm text-muted-foreground">Price</span>
+                          <div className="text-right">
+                            {item.originalPrice && item.originalPrice > item.price ? (
+                              <>
+                                <span className="text-lg font-bold text-foreground">${item.price?.toLocaleString()}</span>
+                                <span className="text-sm text-muted-foreground line-through ml-2">${item.originalPrice?.toLocaleString()}</span>
+                              </>
+                            ) : (
+                              <span className="text-2xl font-bold text-foreground">${item.price?.toLocaleString()}</span>
+                            )}
+                          </div>
+                        </div>
+                        {item.discount && item.discount > 0 && (
+                          <div className="flex justify-end">
+                            <Badge variant="destructive" className="text-xs">
+                              {item.discount}% OFF
+                            </Badge>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
@@ -339,7 +864,7 @@ export default function Dashboard() {
                           glowColor="crimson"
                           onClick={(e) => {
                             e.stopPropagation();
-                            handleProductClick(item.id);
+                            handleProductClick(item.id.toString());
                           }}
                         >
                           <Gavel className="w-4 h-4 mr-2" />
@@ -374,7 +899,9 @@ export default function Dashboard() {
                 </ShimmerCard>
               </div>
             ))}
-          </div>
+              </div>
+            </div>
+          ) : null}
         </div>
       </div>
 

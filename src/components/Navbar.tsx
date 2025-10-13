@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Moon, Menu, User, LogOut, Settings } from "lucide-react";
+import { Moon, Menu, User, LogOut, Settings, Shield } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -91,6 +91,14 @@ export default function Navbar() {
                         <p className="text-xs text-gray-400">{user?.email}</p>
                       </div>
                       <DropdownMenuSeparator className="bg-gray-600" />
+                      {user?.role === 'admin' && (
+                        <DropdownMenuItem asChild className="text-gray-300 hover:bg-gray-700 hover:text-white">
+                          <Link to="/admin">
+                            <Shield className="mr-2 h-4 w-4" />
+                            Admin Dashboard
+                          </Link>
+                        </DropdownMenuItem>
+                      )}
                       <DropdownMenuItem className="text-gray-300 hover:bg-gray-700 hover:text-white">
                         <Settings className="mr-2 h-4 w-4" />
                         Settings

@@ -9,10 +9,12 @@ import { cn } from "@/lib/utils";
 import { Boxes } from "@/components/ui/background-boxes";
 import { useAuthForm } from "@/hooks/useAuthForm";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function Login() {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user } = useAuth();
   const { handleLogin, error, setError, isLoading } = useAuthForm();
   
   const [formData, setFormData] = useState({
@@ -36,12 +38,18 @@ export default function Login() {
     }
 
     try {
-      await handleLogin(formData);
+      const userData = await handleLogin(formData);
       toast({
         title: "Login successful",
-        description: "Welcome back!",
+        description: `Welcome back${userData?.firstName ? ', ' + userData.firstName : ''}!`,
       });
-      navigate("/");
+      
+      // Redirect based on user role
+      if (userData?.role === 'admin') {
+        navigate("/admin");
+      } else {
+        navigate("/dashboard");
+      }
     } catch (err) {
       // Error is already handled by useAuthForm
       toast({

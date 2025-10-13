@@ -5,7 +5,7 @@ interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (credentials: LoginCredentials) => Promise<void>;
+  login: (credentials: LoginCredentials) => Promise<User>;
   register: (credentials: RegisterCredentials) => Promise<void>;
   logout: () => Promise<void>;
   refreshToken: () => Promise<void>;
@@ -48,6 +48,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       const response = await apiClient.login(credentials);
       setUser(response.user);
+      return response.user; // Return user data for immediate access
     } catch (error) {
       console.error('Login error:', error);
       throw error; // Re-throw to let the calling component handle it

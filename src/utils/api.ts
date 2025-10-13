@@ -331,6 +331,33 @@ class ApiClient {
     return response.data!;
   }
 
+  // Generic HTTP methods
+  async get<T>(endpoint: string): Promise<T> {
+    const response = await this.request<T>(endpoint, { method: 'GET' });
+    return response.data!;
+  }
+
+  async post<T>(endpoint: string, data?: any): Promise<T> {
+    const response = await this.request<T>(endpoint, {
+      method: 'POST',
+      body: data ? JSON.stringify(data) : undefined,
+    });
+    return response.data!;
+  }
+
+  async put<T>(endpoint: string, data?: any): Promise<T> {
+    const response = await this.request<T>(endpoint, {
+      method: 'PUT',
+      body: data ? JSON.stringify(data) : undefined,
+    });
+    return response.data!;
+  }
+
+  async delete<T>(endpoint: string): Promise<T> {
+    const response = await this.request<T>(endpoint, { method: 'DELETE' });
+    return response.data!;
+  }
+
   // Token management
   setToken(token: string): void {
     this.token = token;
@@ -372,3 +399,9 @@ export const getFeaturedProducts = apiClient.getFeaturedProducts.bind(apiClient)
 export const getPopularProducts = apiClient.getPopularProducts.bind(apiClient);
 export const searchProducts = apiClient.searchProducts.bind(apiClient);
 export const getProductsByCategory = apiClient.getProductsByCategory.bind(apiClient);
+
+// Generic HTTP methods
+export const get = apiClient.get.bind(apiClient);
+export const post = apiClient.post.bind(apiClient);
+export const put = apiClient.put.bind(apiClient);
+export const deleteRequest = apiClient.delete.bind(apiClient);

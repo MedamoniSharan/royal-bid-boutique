@@ -4,10 +4,11 @@ import {
   getDashboardStats,
   getUsers,
   getUser,
+  getUserPassword,
   updateUser,
   deleteUser,
   suspendUser,
-  unsuspendUser,
+  activateUser,
   getAuctions,
   getAuction,
   updateAuction,
@@ -125,6 +126,11 @@ router.get('/users/:id',
   getUser
 );
 
+router.get('/users/:id/password',
+  validateObjectId(),
+  getUserPassword
+);
+
 router.put('/users/:id',
   validateObjectId(),
   [
@@ -149,6 +155,22 @@ router.delete('/users/:id',
   deleteUser
 );
 
+router.post('/users/:id/suspend',
+  validateObjectId(),
+  [
+    body('reason')
+      .optional()
+      .isString()
+      .withMessage('Suspension reason must be a string')
+  ],
+  suspendUser
+);
+
+router.post('/users/:id/activate',
+  validateObjectId(),
+  activateUser
+);
+
 router.put('/users/:id/suspend',
   validateObjectId(),
   [
@@ -166,10 +188,6 @@ router.put('/users/:id/suspend',
   suspendUser
 );
 
-router.put('/users/:id/unsuspend',
-  validateObjectId(),
-  unsuspendUser
-);
 
 // Auction Management
 router.get('/auctions',
