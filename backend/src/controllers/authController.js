@@ -66,20 +66,31 @@ export const register = catchAsync(async (req, res, next) => {
 export const login = catchAsync(async (req, res, next) => {
   const { email, password } = req.body;
 
+  // Validate input
+  if (!email || !password) {
+    return next(new AppError('Email and password are required', 400));
+  }
+
   // Check if user exists and get password
   const user = await User.findByEmail(email).select('+password');
   if (!user) {
+    // Increment rate limit counter for failed attempt
+    if (req.session) {
+      req.session.authAttempts = (req.session.authAttempts || 0) + 1;
+      req.session.lastAuthAttempt = Date.now();
+    }
     return next(new AppError('Invalid email or password', 401));
-  }
-
-  // Check if account is locked
-  if (user.isLocked) {
-    return next(new AppError('Account is temporarily locked due to too many failed login attempts', 423));
   }
 
   // Check if account is active
   if (!user.isActive) {
-    return next(new AppError('Account is deactivated', 401));
+    return next(new AppError('Account is deactivated. Please contact support.', 401));
+  }
+
+  // Check if account is locked (check lockUntil directly to avoid virtual issues)
+  const isLocked = user.lockUntil && user.lockUntil > Date.now();
+  if (isLocked) {
+    return next(new AppError('Account is temporarily locked due to too many failed login attempts. Please try again later.', 423));
   }
 
   // Check password
@@ -87,12 +98,23 @@ export const login = catchAsync(async (req, res, next) => {
   if (!isPasswordValid) {
     // Increment login attempts
     await user.incLoginAttempts();
+    // Increment rate limit counter for failed attempt
+    if (req.session) {
+      req.session.authAttempts = (req.session.authAttempts || 0) + 1;
+      req.session.lastAuthAttempt = Date.now();
+    }
     return next(new AppError('Invalid email or password', 401));
   }
 
   // Reset login attempts on successful login
   if (user.loginAttempts > 0) {
     await user.resetLoginAttempts();
+  }
+
+  // Reset rate limit counter on successful login
+  if (req.session) {
+    req.session.authAttempts = 0;
+    req.session.lastAuthAttempt = Date.now();
   }
 
   // Update last login

@@ -192,7 +192,6 @@ export const authRateLimit = (req, res, next) => {
     req.session = {};
   }
   
-  const key = `auth_attempts_${req.ip}`;
   const attempts = req.session.authAttempts || 0;
   const lastAttempt = req.session.lastAuthAttempt || 0;
   const now = Date.now();
@@ -200,6 +199,7 @@ export const authRateLimit = (req, res, next) => {
   // Reset attempts after 15 minutes
   if (now - lastAttempt > 15 * 60 * 1000) {
     req.session.authAttempts = 0;
+    req.session.lastAuthAttempt = 0;
   }
   
   // Allow up to 5 attempts per 15 minutes

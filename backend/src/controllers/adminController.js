@@ -425,42 +425,69 @@ export const getProducts = catchAsync(async (req, res, next) => {
   const Product = (await import('../models/Product.js')).default;
   const User = (await import('../models/User.js')).default;
   
-  const page = parseInt(req.query.page) || 1;
-  const limit = parseInt(req.query.limit) || 20;
-  const skip = (page - 1) * limit;
-  
-  const query = {};
-  
-  // Filter by status if provided
-  if (req.query.status) {
-    query.status = req.query.status;
-  }
-  
-  // Filter by auction type if provided
-  if (req.query.auctionType) {
-    query.auctionType = req.query.auctionType;
-  }
-  
-  const products = await Product.find(query)
-    .populate('seller', 'firstName lastName email')
-    .sort({ createdAt: -1 })
-    .skip(skip)
-    .limit(limit)
-    .select('-__v');
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const skip = (page - 1) * limit;
     
-  const total = await Product.countDocuments(query);
-  
-  res.json({
-    success: true,
-    message: 'Products retrieved successfully',
-    products,
-    pagination: {
-      page,
-      limit,
-      total,
-      pages: Math.ceil(total / limit)
+    const query = {};
+    
+    // Filter by status if provided
+    if (req.query.status) {
+      query.status = req.query.status;
     }
-  });
+    
+    // Filter by auction type if provided
+    if (req.query.auctionType) {
+      query.auctionType = req.query.auctionType;
+    }
+    
+    console.log('Admin getProducts query:', query);
+    console.log('Admin getProducts pagination:', { page, limit, skip });
+    
+    // Get products with pagination
+    const products = await Product.find(query)
+      .populate({
+        path: 'seller',
+        select: 'firstName lastName email avatar',
+        options: { lean: true }
+      })
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .select('-__v')
+      .lean(); // Use lean() for better performance
+    
+    // Get total count for pagination
+    const total = await Product.countDocuments(query);
+    
+    console.log(`Admin getProducts: Found ${products.length} products out of ${total} total`);
+    
+    res.json({
+      success: true,
+      message: 'Products retrieved successfully',
+      data: {
+        products,
+        pagination: {
+          page,
+          limit,
+          total,
+          pages: Math.ceil(total / limit)
+        }
+      },
+      // Also include at root level for backward compatibility
+      products,
+      pagination: {
+        page,
+        limit,
+        total,
+        pages: Math.ceil(total / limit)
+      }
+    });
+  } catch (error) {
+    console.error('Get products error:', error);
+    next(error);
+  }
 });
 
 export const getProduct = catchAsync(async (req, res, next) => {
