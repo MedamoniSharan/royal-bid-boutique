@@ -373,11 +373,31 @@ export default function ProductDetailView({ productId, onBack, auctionType = "au
   }
 
   const handleAddToCart = () => {
-    if (isAuthenticated) {
-      navigate('/dashboard');
-    } else {
-      navigate('/login');
+    const cartItem = {
+      id: product.id,
+      title: product.title,
+      image: product.images?.[0],
+      quantity,
+      unitPrice:
+        product.auctionDetails?.buyNowPrice ??
+        product.currentPrice ??
+        product.price ??
+        0,
+      totalPrice:
+        quantity *
+        (product.auctionDetails?.buyNowPrice ??
+          product.currentPrice ??
+          product.price ??
+          0),
+      auctionType: product.auctionType,
+    };
+
+    if (!isAuthenticated) {
+      navigate("/login", { state: { from: "/cart", cartItem } });
+      return;
     }
+
+    navigate("/cart", { state: { cartItem } });
   };
 
   const nextImage = () => {

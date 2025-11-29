@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -22,7 +21,7 @@ import {
   Loader2,
   AlertCircle
 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import ProductListingForm from "@/components/ProductListingForm";
 import ProductDetailView from "@/components/ProductDetailView";
 import { useRetailProducts, useRetailDashboardStats } from "@/hooks/useRetailApi";
@@ -340,6 +339,17 @@ export default function Dashboard() {
                   Sell
                 </Button>
               </div>
+              
+              {/* View Orders - only in buy mode */}
+              {userMode === 'buy' && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => navigate("/orders")}
+                >
+                  View Orders
+                </Button>
+              )}
               
               {/* Refresh Button */}
               <Button 

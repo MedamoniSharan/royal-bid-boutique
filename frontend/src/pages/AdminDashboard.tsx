@@ -8,7 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { 
+import {
   Shield, 
   Package, 
   Users, 
@@ -37,6 +37,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/utils/api";
+import { getAllOrders, Order } from "@/utils/orders";
 import { toast } from "sonner";
 
 interface PendingProduct {
@@ -134,6 +135,7 @@ export default function AdminDashboard() {
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [userPassword, setUserPassword] = useState<string | null>(null);
+  const [orders, setOrders] = useState<Order[]>([]);
   
   // User management filters
   const [userSearchTerm, setUserSearchTerm] = useState("");
@@ -172,6 +174,12 @@ export default function AdminDashboard() {
     },
     refetchInterval: 30000, // Refetch every 30 seconds
   });
+
+  // Load local orders to display simple order status overview
+  useEffect(() => {
+    const allOrders = getAllOrders();
+    setOrders(allOrders);
+  }, []);
 
   // Approve product mutation
   const approveProductMutation = useMutation({
@@ -554,6 +562,71 @@ export default function AdminDashboard() {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Recent Orders (local demo) */}
+            {orders.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Recent Orders</CardTitle>
+                  <CardDescription>
+                    Orders placed through the current frontend session (stored locally)
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead className="bg-muted/50">
+                        <tr>
+                          <th className="text-left px-3 py-2">Order ID</th>
+                          <th className="text-left px-3 py-2">User</th>
+                          <th className="text-left px-3 py-2">Product</th>
+                          <th className="text-left px-3 py-2">Total</th>
+                          <th className="text-left px-3 py-2">Status</th>
+                          <th className="text-left px-3 py-2">Placed At</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y">
+                        {orders.slice(0, 5).map((order) => (
+                          <tr key={order.id} className="hover:bg-muted/25">
+                            <td className="px-3 py-2 font-mono text-xs">
+                              {order.id}
+                            </td>
+                            <td className="px-3 py-2 text-xs text-muted-foreground">
+                              {order.userId}
+                            </td>
+                            <td className="px-3 py-2">
+                              {order.productTitle}
+                            </td>
+                            <td className="px-3 py-2">
+                              ${order.amount.toLocaleString()}
+                            </td>
+                            <td className="px-3 py-2">
+                              <Badge
+                                variant={
+                                  order.status === "completed"
+                                    ? "default"
+                                    : order.status === "processing"
+                                    ? "secondary"
+                                    : order.status === "pending"
+                                    ? "outline"
+                                    : "destructive"
+                                }
+                                className="text-xs"
+                              >
+                                {order.status.toUpperCase()}
+                              </Badge>
+                            </td>
+                            <td className="px-3 py-2 text-xs text-muted-foreground">
+                              {new Date(order.createdAt).toLocaleString()}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </TabsContent>
 
           {/* Product Review Tab */}
