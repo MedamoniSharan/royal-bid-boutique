@@ -7,7 +7,8 @@ import {
   getAuctionProductsByCategory,
   searchAuctionProducts,
   getAuctionProduct,
-  getAuctionDashboardStats
+  getAuctionDashboardStats,
+  placeBidOnAuctionProduct
 } from '../controllers/auctionApiController.js';
 import { protect, authorize, optionalAuth } from '../middleware/auth.js';
 import { handleValidationErrors } from '../middleware/validation.js';
@@ -126,6 +127,12 @@ router.get('/products/:id',
 router.get('/dashboard/stats',
   protect,
   getAuctionDashboardStats
+);
+
+// Place a bid on an auction product
+router.post('/products/:id/bids',
+  protect,
+  placeBidOnAuctionProduct
 );
 
 export default router;

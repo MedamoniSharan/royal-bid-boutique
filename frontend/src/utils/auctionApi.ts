@@ -54,6 +54,33 @@ export interface AuctionProduct {
   auctionStatus?: 'live' | 'ended';
   timeLeft?: number;
   id?: string;
+  currentBid?: number;
+  bidCount?: number;
+  bidHistory?: Array<{
+    id: string;
+    bidder: {
+      name: string;
+      avatar?: string;
+      isVerified: boolean;
+    };
+    amount: number;
+    timestamp: string;
+    isWinningBid: boolean;
+  }>;
+  // Bidding fields (optional, populated when viewing a single product)
+  currentBid?: number;
+  bidCount?: number;
+  bidHistory?: Array<{
+    id: string;
+    bidder: {
+      name: string;
+      avatar?: string;
+      isVerified: boolean;
+    };
+    amount: number;
+    timestamp: string;
+    isWinningBid: boolean;
+  }>;
 }
 
 export interface AuctionProductsResponse {
@@ -171,6 +198,17 @@ class AuctionApiClient {
    */
   async getProduct(productId: string): Promise<AuctionProductResponse> {
     return apiClient.get(`${this.baseUrl}/products/${productId}`);
+  }
+
+  async placeBid(productId: string, amount: number) {
+    return apiClient.post(`${this.baseUrl}/products/${productId}/bids`, { amount });
+  }
+
+  /**
+   * Place a bid on an auction product
+   */
+  async placeBid(productId: string, amount: number) {
+    return apiClient.post(`${this.baseUrl}/products/${productId}/bids`, { amount });
   }
 
   /**

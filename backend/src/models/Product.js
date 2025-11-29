@@ -68,7 +68,24 @@ const productSchema = new mongoose.Schema({
       message: 'Auction end date is required for auction listings'
     }
   },
-  
+  // Auction Bids History
+  bids: [{
+    bidder: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      required: true
+    },
+    amount: {
+      type: Number,
+      required: true,
+      min: [0, 'Bid amount must be non-negative']
+    },
+    createdAt: {
+      type: Date,
+      default: Date.now
+    }
+  }],
+
   // Additional Product Information
   brand: {
     type: String,

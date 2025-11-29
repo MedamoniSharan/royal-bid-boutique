@@ -10,7 +10,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
 import { useRetailProduct } from "@/hooks/useRetailApi";
 import { useAntiPiecesProduct } from "@/hooks/useAntiPiecesApi";
-import { useAuctionProduct } from "@/hooks/useAuctionApi";
+import { useAuctionProduct, usePlaceBid } from "@/hooks/useAuctionApi";
 import { 
   ArrowLeft, 
   Heart, 
@@ -88,6 +88,7 @@ interface ProductDetail {
 export default function ProductDetailView({ productId, onBack, auctionType = "auction" }: { productId: string | number, onBack: () => void, auctionType?: "auction" | "retail" | "anti-pieces" }) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [quantity, setQuantity] = useState(1);
+  const [bidAmount, setBidAmount] = useState<string>("");
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
   const [activeTab, setActiveTab] = useState(
@@ -104,6 +105,9 @@ export default function ProductDetailView({ productId, onBack, auctionType = "au
   );
   
   const { data: auctionProduct, isLoading: auctionLoading, error: auctionError } = useAuctionProduct(
+    auctionType === "auction" ? productId.toString() : undefined
+  );
+  const placeBidMutation = usePlaceBid(
     auctionType === "auction" ? productId.toString() : undefined
   );
 
@@ -238,22 +242,24 @@ export default function ProductDetailView({ productId, onBack, auctionType = "au
     }
 
     if (type === "auction") {
+      const currentBid = apiProduct.currentBid ?? apiProduct.startingBid ?? 0;
+      const bidHistory = apiProduct.bidHistory || [];
       return {
         ...baseProduct,
-        currentBid: apiProduct.startingBid || 0,
-        currentPrice: apiProduct.startingBid || 0,
-        nextBid: (apiProduct.startingBid || 0) + 100,
-        bids: Math.floor(Math.random() * 50) + 1, // Mock bid count
+        currentBid,
+        currentPrice: currentBid,
+        nextBid: currentBid + 1,
+        bids: apiProduct.bidCount || bidHistory.length,
         timeLeft: apiProduct.timeLeft ? `${Math.floor(apiProduct.timeLeft / (1000 * 60 * 60))}h ${Math.floor((apiProduct.timeLeft % (1000 * 60 * 60)) / (1000 * 60))}m` : "2h 45m",
         status: apiProduct.auctionStatus === 'live' ? "live" : "ended",
         auctionDetails: {
           endTime: apiProduct.endTime || new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(),
-          currentBid: apiProduct.startingBid || 0,
-          minBid: apiProduct.startingBid || 0,
-          bidIncrement: 100,
+          currentBid,
+          minBid: currentBid,
+          bidIncrement: 1,
           reservePrice: apiProduct.reservePrice || 0,
           buyNowPrice: apiProduct.buyNowPrice || 0,
-          bidCount: Math.floor(Math.random() * 50) + 1
+          bidCount: bidHistory.length || apiProduct.bidCount || 0
         },
         shipping: {
           cost: 25,
@@ -265,7 +271,7 @@ export default function ProductDetailView({ productId, onBack, auctionType = "au
         specifications: apiProduct.specifications || {},
         longDescription: apiProduct.longDescription || apiProduct.description,
         reviews: [],
-        bidHistory: apiProduct.bidHistory || []
+        bidHistory
       };
     }
 
@@ -398,6 +404,43 @@ export default function ProductDetailView({ productId, onBack, auctionType = "au
     }
 
     navigate("/cart", { state: { cartItem } });
+  };
+
+  // Handle placing a bid without navigating to cart/orders
+  const handlePlaceBid = async () => {
+    if (!isAuthenticated) {
+      navigate("/login", { state: { from: window.location.pathname } });
+      return;
+    }
+
+    const currentBid =
+      product.auctionDetails?.currentBid ??
+      product.currentBid ??
+      product.currentPrice ??
+      product.price ??
+      0;
+    const minNextBid = currentBid + 1;
+
+    const numericAmount = Number(bidAmount);
+    if (!bidAmount || isNaN(numericAmount)) {
+      alert(`Please enter a valid bid amount greater than ${currentBid}. Minimum next bid is ${minNextBid}.`);
+      return;
+    }
+
+    if (numericAmount <= currentBid) {
+      alert(`Your bid must be greater than the current highest bid of ${currentBid}.`);
+      return;
+    }
+
+    try {
+      await placeBidMutation.mutateAsync(numericAmount);
+      setBidAmount("");
+    } catch (error: any) {
+      const message =
+        error?.response?.data?.message ||
+        "Failed to place bid. Please try again.";
+      alert(message);
+    }
   };
 
   const nextImage = () => {
@@ -635,12 +678,36 @@ export default function ProductDetailView({ productId, onBack, auctionType = "au
                 </div>
               </div>
 
+              {(product.auctionType === "auction" || product.auctionType === "both") && (
+                <div className="space-y-2">
+                  <label className="text-sm font-medium flex justify-between items-center">
+                    <span>Place your bid</span>
+                    <span className="text-xs text-muted-foreground">
+                      Current: {formatPrice(product.auctionDetails?.currentBid || product.currentPrice)} &nbsp;|&nbsp;
+                      Min next bid:{" "}
+                      {formatPrice(
+                        (product.auctionDetails?.currentBid || product.currentPrice || 0) + 1
+                      )}
+                    </span>
+                  </label>
+                  <Input
+                    type="number"
+                    min={(product.auctionDetails?.currentBid || product.currentPrice || 0) + 1}
+                    value={bidAmount}
+                    onChange={(e) => setBidAmount(e.target.value)}
+                    placeholder={`Enter at least ${
+                      (product.auctionDetails?.currentBid || product.currentPrice || 0) + 1
+                    }`}
+                  />
+                </div>
+              )}
+
               <div className="space-y-2">
                 {product.auctionType === "auction" || product.auctionType === "both" ? (
                   <>
                     <Button 
                       className="w-full bg-crimson hover:bg-crimson/90 h-12"
-                      onClick={handleAddToCart}
+                      onClick={handlePlaceBid}
                     >
                       <Gavel className="w-5 h-5 mr-2" />
                       Place Bid - {formatPrice(product.auctionDetails?.currentBid || product.currentPrice)}

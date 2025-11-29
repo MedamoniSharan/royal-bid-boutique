@@ -414,6 +414,7 @@ export const getAuctionProduct = catchAsync(async (req, res, next) => {
     isActive: true
   })
   .populate('seller', 'firstName lastName email avatar')
+  .populate('bids.bidder', 'firstName lastName email avatar')
   .select('-__v');
 
   if (!product) {
@@ -423,12 +424,42 @@ export const getAuctionProduct = catchAsync(async (req, res, next) => {
   // Increment view count
   await Product.findByIdAndUpdate(id, { $inc: { viewCount: 1 } });
 
+  // Build bid history for UI
+  const bidsArray = product.bids || [];
+  const sortedBids = [...bidsArray].sort((a, b) => b.createdAt - a.createdAt);
+  const highestBid = bidsArray.length > 0
+    ? Math.max(...bidsArray.map(bid => bid.amount))
+    : product.startingBid;
+
+  const bidHistory = sortedBids.map((bid, index) => {
+    const bidder = bid.bidder;
+    const bidderName = bidder
+      ? `${bidder.firstName || ''} ${bidder.lastName || ''}`.trim() || bidder.email
+      : 'Anonymous Bidder';
+
+    return {
+      id: bid._id,
+      bidder: {
+        name: bidderName,
+        avatar: bidder?.avatar || '',
+        isVerified: false
+      },
+      amount: bid.amount,
+      timestamp: bid.createdAt,
+      isWinningBid: index === 0
+    };
+  });
+
   const transformedProduct = {
     ...product.toObject(),
     discountedPrice: product.startingBid,
     auctionStatus: product.auctionEndDate > new Date() ? 'live' : 'ended',
-    timeLeft: product.auctionEndDate > new Date() ? 
-      Math.max(0, product.auctionEndDate - new Date()) : 0
+    timeLeft: product.auctionEndDate > new Date()
+      ? Math.max(0, product.auctionEndDate - new Date())
+      : 0,
+    currentBid: highestBid || product.startingBid,
+    bidHistory,
+    bidCount: bidsArray.length
   };
 
   // Get related auction products
@@ -458,6 +489,90 @@ export const getAuctionProduct = catchAsync(async (req, res, next) => {
     data: {
       product: transformedProduct,
       relatedProducts: transformedRelatedProducts
+    }
+  });
+});
+
+// Place a bid on an auction product
+export const placeBidOnAuctionProduct = catchAsync(async (req, res, next) => {
+  const { id } = req.params;
+  const { amount } = req.body;
+
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    return next(new AppError('Invalid auction product ID', 400));
+  }
+
+  if (amount === undefined || amount === null || isNaN(amount)) {
+    return next(new AppError('Bid amount is required and must be a number', 400));
+  }
+
+  const bidAmount = Number(amount);
+  if (bidAmount <= 0) {
+    return next(new AppError('Bid amount must be greater than zero', 400));
+  }
+
+  const product = await Product.findOne({
+    _id: id,
+    auctionType: 'Auction',
+    status: 'active',
+    isActive: true
+  }).populate('bids.bidder', 'firstName lastName email avatar');
+
+  if (!product) {
+    return next(new AppError('Auction product not found', 404));
+  }
+
+  if (!product.auctionEndDate || product.auctionEndDate <= new Date()) {
+    return next(new AppError('This auction has ended and no longer accepts bids', 400));
+  }
+
+  const existingBids = product.bids || [];
+  const currentHighest = existingBids.length > 0
+    ? Math.max(...existingBids.map(bid => bid.amount))
+    : product.startingBid || 0;
+
+  if (bidAmount <= currentHighest) {
+    return next(new AppError(`Your bid must be greater than the current highest bid of ${currentHighest}`, 400));
+  }
+
+  product.bids.push({
+    bidder: req.user.id,
+    amount: bidAmount
+  });
+
+  await product.save();
+  await product.populate('bids.bidder', 'firstName lastName email avatar');
+
+  const bidsArray = product.bids || [];
+  const sortedBids = [...bidsArray].sort((a, b) => b.createdAt - a.createdAt);
+  const highestBid = Math.max(...bidsArray.map(bid => bid.amount));
+
+  const bidHistory = sortedBids.map((bid, index) => {
+    const bidder = bid.bidder;
+    const bidderName = bidder
+      ? `${bidder.firstName || ''} ${bidder.lastName || ''}`.trim() || bidder.email
+      : 'Anonymous Bidder';
+
+    return {
+      id: bid._id,
+      bidder: {
+        name: bidderName,
+        avatar: bidder?.avatar || '',
+        isVerified: false
+      },
+      amount: bid.amount,
+      timestamp: bid.createdAt,
+      isWinningBid: index === 0
+    };
+  });
+
+  res.status(201).json({
+    success: true,
+    message: 'Bid placed successfully',
+    data: {
+      currentBid: highestBid,
+      bidHistory,
+      bidCount: bidsArray.length
     }
   });
 });

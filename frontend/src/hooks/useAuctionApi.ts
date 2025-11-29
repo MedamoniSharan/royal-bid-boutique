@@ -23,6 +23,7 @@ export const auctionQueryKeys = {
   category: (category: string, page: number, limit: number) => ['auction', 'category', category, page, limit] as const,
   search: (query: string, page: number, limit: number) => ['auction', 'search', query, page, limit] as const,
   dashboardStats: () => ['auction', 'dashboard', 'stats'] as const,
+  placeBid: (id: string) => ['auction', 'product', id, 'placeBid'] as const,
 };
 
 /**
@@ -105,6 +106,28 @@ export function useAuctionProduct(productId?: string) {
     enabled: !!productId,
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 15 * 60 * 1000, // 15 minutes
+  });
+}
+
+/**
+ * Hook to place a bid on an auction product
+ */
+export function usePlaceBid(productId?: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationKey: productId ? auctionQueryKeys.placeBid(productId) : undefined,
+    mutationFn: (amount: number) => {
+      if (!productId) {
+        throw new Error('Product ID is required to place a bid');
+      }
+      return auctionApi.placeBid(productId, amount);
+    },
+    onSuccess: () => {
+      if (productId) {
+        queryClient.invalidateQueries({ queryKey: auctionQueryKeys.product(productId) });
+      }
+    },
   });
 }
 
