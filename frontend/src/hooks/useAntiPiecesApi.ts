@@ -121,3 +121,38 @@ export function useAntiPiecesDashboardStats() {
     enabled: false, // Disable by default - will be enabled by individual components when needed
   });
 }
+
+/**
+ * Hook to update an anti-pieces product
+ */
+export function useUpdateAntiPiecesProduct() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ productId, productData }: { productId: string; productData: Partial<AntiPiecesProduct> }) => {
+      return antiPiecesApi.updateProduct(productId, productData);
+    },
+    onSuccess: (_, { productId }) => {
+      queryClient.invalidateQueries({ queryKey: antiPiecesQueryKeys.product(productId) });
+      queryClient.invalidateQueries({ queryKey: antiPiecesQueryKeys.products({}) });
+      queryClient.invalidateQueries({ queryKey: antiPiecesQueryKeys.dashboardStats() });
+    },
+  });
+}
+
+/**
+ * Hook to delete an anti-pieces product
+ */
+export function useDeleteAntiPiecesProduct() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (productId: string) => {
+      return antiPiecesApi.deleteProduct(productId);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: antiPiecesQueryKeys.products({}) });
+      queryClient.invalidateQueries({ queryKey: antiPiecesQueryKeys.dashboardStats() });
+    },
+  });
+}

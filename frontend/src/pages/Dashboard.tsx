@@ -19,14 +19,16 @@ import {
   Eye,
   Home,
   Loader2,
-  AlertCircle
+  AlertCircle,
+  Trash2,
+  Edit
 } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import ProductListingForm from "@/components/ProductListingForm";
 import ProductDetailView from "@/components/ProductDetailView";
-import { useRetailProducts, useRetailDashboardStats } from "@/hooks/useRetailApi";
-import { useAuctionProducts, useAuctionDashboardStats } from "@/hooks/useAuctionApi";
-import { useAntiPiecesProducts, useAntiPiecesDashboardStats } from "@/hooks/useAntiPiecesApi";
+import { useRetailProducts, useRetailDashboardStats, useDeleteRetailProduct } from "@/hooks/useRetailApi";
+import { useAuctionProducts, useAuctionDashboardStats, useDeleteAuctionProduct } from "@/hooks/useAuctionApi";
+import { useAntiPiecesProducts, useAntiPiecesDashboardStats, useDeleteAntiPiecesProduct } from "@/hooks/useAntiPiecesApi";
 import { RetailProduct } from "@/utils/retailApi";
 import { AuctionProduct } from "@/utils/auctionApi";
 import { AntiPiecesProduct } from "@/utils/antiPiecesApi";
@@ -42,6 +44,15 @@ export default function Dashboard() {
   const [userMode, setUserMode] = useState<UserMode>('buy');
   const [showProductForm, setShowProductForm] = useState(false);
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
+  const [productToDelete, setProductToDelete] = useState<string | null>(null);
+
+  // Check if user is a seller or admin
+  const isSeller = user?.role === 'seller' || user?.role === 'admin';
+
+  // Delete mutation hooks
+  const deleteRetailProduct = useDeleteRetailProduct();
+  const deleteAuctionProduct = useDeleteAuctionProduct();
+  const deleteAntiPiecesProduct = useDeleteAntiPiecesProduct();
 
   // Fetch retail products from API
   const { 
@@ -105,6 +116,13 @@ export default function Dashboard() {
     }
   }, [location.state]);
 
+  // Ensure non-sellers can't access sell mode
+  useEffect(() => {
+    if (!isSeller && userMode === 'sell') {
+      setUserMode('buy');
+    }
+  }, [isSeller, userMode]);
+
   const handleLogout = async () => {
     await logout();
     navigate('/');
@@ -120,6 +138,25 @@ export default function Dashboard() {
 
   const handleBackToDashboard = () => {
     setSelectedProductId(null);
+  };
+
+  const handleDeleteProduct = async (productId: string) => {
+    if (!window.confirm('Are you sure you want to delete this product? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      if (activeSection === 'retail') {
+        await deleteRetailProduct.mutateAsync(productId);
+      } else if (activeSection === 'auction') {
+        await deleteAuctionProduct.mutateAsync(productId);
+      } else if (activeSection === 'anti-pieces') {
+        await deleteAntiPiecesProduct.mutateAsync(productId);
+      }
+    } catch (error) {
+      console.error('Failed to delete product:', error);
+      alert('Failed to delete product. Please try again.');
+    }
   };
 
   const sidebarItems = [
@@ -211,7 +248,18 @@ export default function Dashboard() {
     'anti-pieces': antiPiecesData?.products?.map(transformAntiPiecesProduct) || []
   };
 
-  const currentItems = apiItems[activeSection];
+  // Filter products by seller when in sell mode and user is a seller
+  const filteredItems = isSeller && userMode === 'sell' && user?.id
+    ? apiItems[activeSection].filter(item => {
+        // Check if product seller matches current user
+        const sellerId = typeof item.seller === 'object' && item.seller !== null
+          ? (item.seller as any)._id || (item.seller as any).id
+          : item.seller;
+        return sellerId === user.id || sellerId?.toString() === user.id;
+      })
+    : apiItems[activeSection];
+
+  const currentItems = filteredItems;
 
   // If a product is selected, show the detail view
   if (selectedProductId) {
@@ -329,15 +377,17 @@ export default function Dashboard() {
                   <TrendingUp className="w-4 h-4 mr-2" />
                   Buy
                 </Button>
-                <Button
-                  variant={userMode === 'sell' ? 'default' : 'ghost'}
-                  size="sm"
-                  onClick={() => setUserMode('sell')}
-                  className={userMode === 'sell' ? 'bg-crimson hover:bg-crimson/90' : ''}
-                >
-                  <DollarSign className="w-4 h-4 mr-2" />
-                  Sell
-                </Button>
+                {isSeller && (
+                  <Button
+                    variant={userMode === 'sell' ? 'default' : 'ghost'}
+                    size="sm"
+                    onClick={() => setUserMode('sell')}
+                    className={userMode === 'sell' ? 'bg-crimson hover:bg-crimson/90' : ''}
+                  >
+                    <DollarSign className="w-4 h-4 mr-2" />
+                    Sell
+                  </Button>
+                )}
               </div>
               
               {/* View Orders - only in buy mode */}
@@ -366,8 +416,8 @@ export default function Dashboard() {
                 {retailLoading || auctionLoading || antiPiecesLoading ? 'Refreshing...' : 'Refresh'}
               </Button>
               
-              {/* Add Product Button - only show in sell mode */}
-              {userMode === 'sell' && (
+              {/* Add Product Button - only show in sell mode and for sellers */}
+              {isSeller && userMode === 'sell' && (
                 <Button 
                   onClick={() => setShowProductForm(true)}
                   className="bg-crimson hover:bg-crimson/90"
@@ -640,9 +690,9 @@ export default function Dashboard() {
                 <ShoppingBag className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
                 <h3 className="text-lg font-semibold mb-2">No retail products found</h3>
                 <p className="text-muted-foreground mb-4">
-                  {userMode === 'sell' ? 'Start by listing your first product!' : 'No products are currently available.'}
+                  {isSeller && userMode === 'sell' ? 'Start by listing your first product!' : 'No products are currently available.'}
                 </p>
-                {userMode === 'sell' && (
+                {isSeller && userMode === 'sell' && (
                   <Button 
                     onClick={() => setShowProductForm(true)}
                     className="bg-crimson hover:bg-crimson/90"
@@ -661,9 +711,9 @@ export default function Dashboard() {
                 <Gavel className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
                 <h3 className="text-lg font-semibold mb-2">No auction products found</h3>
                 <p className="text-muted-foreground mb-4">
-                  {userMode === 'sell' ? 'Start by creating your first auction!' : 'No auctions are currently available.'}
+                  {isSeller && userMode === 'sell' ? 'Start by creating your first auction!' : 'No auctions are currently available.'}
                 </p>
-                {userMode === 'sell' && (
+                {isSeller && userMode === 'sell' && (
                   <Button 
                     onClick={() => setShowProductForm(true)}
                     className="bg-crimson hover:bg-crimson/90"
@@ -682,9 +732,9 @@ export default function Dashboard() {
                 <Clock className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
                 <h3 className="text-lg font-semibold mb-2">No anti-pieces found</h3>
                 <p className="text-muted-foreground mb-4">
-                  {userMode === 'sell' ? 'Start by listing your first antique!' : 'No antiques are currently available.'}
+                  {isSeller && userMode === 'sell' ? 'Start by listing your first antique!' : 'No antiques are currently available.'}
                 </p>
-                {userMode === 'sell' && (
+                {isSeller && userMode === 'sell' && (
                   <Button 
                     onClick={() => setShowProductForm(true)}
                     className="bg-purple-600 hover:bg-purple-700"
@@ -759,7 +809,11 @@ export default function Dashboard() {
               
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {currentItems.map((item) => (
-              <div key={item.id}>
+              <div 
+                key={item.id}
+                className="cursor-pointer"
+                onClick={() => handleProductClick(item.id.toString())}
+              >
                 <ShimmerCard 
                   className="group border-border/50"
                   shimmerColor="gold"
@@ -873,7 +927,7 @@ export default function Dashboard() {
                 </div>
 
                 <div className="p-6 pt-0 space-y-3">
-                  {userMode === 'buy' ? (
+                  {userMode === 'buy' && (
                     <>
                       <div className="flex space-x-2">
                         <GlowButton 
@@ -899,18 +953,32 @@ export default function Dashboard() {
                         </Button>
                       </div>
                     </>
-                  ) : (
-                    <Button 
-                      variant="outline" 
-                      className="w-full"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setShowProductForm(true);
-                      }}
-                    >
-                      <Plus className="w-4 h-4 mr-2" />
-                      List Item
-                    </Button>
+                  )}
+                  {isSeller && userMode === 'sell' && (
+                    <div className="flex space-x-2">
+                      <Button 
+                        variant="outline"
+                        className="flex-1 border-red-500 text-red-500 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteProduct(item.id.toString());
+                        }}
+                        disabled={deleteRetailProduct.isPending || deleteAuctionProduct.isPending || deleteAntiPiecesProduct.isPending}
+                      >
+                        <Trash2 className="w-4 h-4 mr-2" />
+                        {deleteRetailProduct.isPending || deleteAuctionProduct.isPending || deleteAntiPiecesProduct.isPending ? 'Deleting...' : 'Delete'}
+                      </Button>
+                      <Button 
+                        variant="outline"
+                        className="px-3 hover:bg-gray-100 dark:hover:bg-gray-800"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleProductClick(item.id.toString());
+                        }}
+                      >
+                        <Eye className="w-4 h-4 text-gray-600" />
+                      </Button>
+                    </div>
                   )}
                 </div>
                 </ShimmerCard>

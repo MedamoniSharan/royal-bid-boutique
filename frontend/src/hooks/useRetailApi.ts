@@ -268,3 +268,40 @@ export function useRetailProductOperations() {
     updateViewCount,
   };
 }
+
+/**
+ * Hook to update a retail product
+ */
+export function useUpdateRetailProduct() {
+  const queryClient = useQueryClient();
+  const { invalidateProducts, invalidateProduct } = useInvalidateRetailQueries();
+
+  return useMutation({
+    mutationFn: ({ productId, productData }: { productId: string; productData: Partial<RetailProduct> }) => {
+      return retailApi.updateProduct(productId, productData);
+    },
+    onSuccess: (_, { productId }) => {
+      invalidateProduct(productId);
+      invalidateProducts();
+      queryClient.invalidateQueries({ queryKey: retailQueryKeys.dashboardStats() });
+    },
+  });
+}
+
+/**
+ * Hook to delete a retail product
+ */
+export function useDeleteRetailProduct() {
+  const queryClient = useQueryClient();
+  const { invalidateProducts } = useInvalidateRetailQueries();
+
+  return useMutation({
+    mutationFn: (productId: string) => {
+      return retailApi.deleteProduct(productId);
+    },
+    onSuccess: () => {
+      invalidateProducts();
+      queryClient.invalidateQueries({ queryKey: retailQueryKeys.dashboardStats() });
+    },
+  });
+}

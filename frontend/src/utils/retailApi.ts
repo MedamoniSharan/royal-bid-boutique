@@ -258,6 +258,20 @@ class RetailApiClient {
   async getAdminDashboardStats(): Promise<RetailDashboardStats> {
     return apiClient.get(`${this.baseUrl}/admin/dashboard`);
   }
+
+  /**
+   * Update a retail product (requires authentication and ownership)
+   */
+  async updateProduct(productId: string, productData: Partial<RetailProduct>): Promise<RetailProductResponse> {
+    return apiClient.put(`${this.baseUrl}/products/${productId}`, productData);
+  }
+
+  /**
+   * Delete a retail product (requires authentication and ownership)
+   */
+  async deleteProduct(productId: string): Promise<{ success: boolean; message: string }> {
+    return apiClient.delete(`${this.baseUrl}/products/${productId}`);
+  }
 }
 
 // Export singleton instance

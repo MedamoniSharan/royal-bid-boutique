@@ -217,6 +217,20 @@ class AuctionApiClient {
   async getDashboardStats(): Promise<AuctionDashboardStats> {
     return apiClient.get(`${this.baseUrl}/dashboard/stats`);
   }
+
+  /**
+   * Update an auction product (requires authentication and ownership)
+   */
+  async updateProduct(productId: string, productData: Partial<AuctionProduct>): Promise<AuctionProductResponse> {
+    return apiClient.put(`${this.baseUrl}/products/${productId}`, productData);
+  }
+
+  /**
+   * Delete an auction product (requires authentication and ownership)
+   */
+  async deleteProduct(productId: string): Promise<{ success: boolean; message: string }> {
+    return apiClient.delete(`${this.baseUrl}/products/${productId}`);
+  }
 }
 
 // Create and export a singleton instance

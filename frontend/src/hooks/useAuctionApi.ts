@@ -143,3 +143,38 @@ export function useAuctionDashboardStats() {
     enabled: false, // Disable by default - will be enabled by individual components when needed
   });
 }
+
+/**
+ * Hook to update an auction product
+ */
+export function useUpdateAuctionProduct() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ productId, productData }: { productId: string; productData: Partial<AuctionProduct> }) => {
+      return auctionApi.updateProduct(productId, productData);
+    },
+    onSuccess: (_, { productId }) => {
+      queryClient.invalidateQueries({ queryKey: auctionQueryKeys.product(productId) });
+      queryClient.invalidateQueries({ queryKey: auctionQueryKeys.products({}) });
+      queryClient.invalidateQueries({ queryKey: auctionQueryKeys.dashboardStats() });
+    },
+  });
+}
+
+/**
+ * Hook to delete an auction product
+ */
+export function useDeleteAuctionProduct() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (productId: string) => {
+      return auctionApi.deleteProduct(productId);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: auctionQueryKeys.products({}) });
+      queryClient.invalidateQueries({ queryKey: auctionQueryKeys.dashboardStats() });
+    },
+  });
+}

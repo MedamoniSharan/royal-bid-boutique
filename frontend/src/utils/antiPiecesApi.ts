@@ -180,6 +180,20 @@ class AntiPiecesApiClient {
   async getDashboardStats(): Promise<AntiPiecesDashboardStats> {
     return apiClient.get(`${this.baseUrl}/dashboard/stats`);
   }
+
+  /**
+   * Update an anti-pieces product (requires authentication and ownership)
+   */
+  async updateProduct(productId: string, productData: Partial<AntiPiecesProduct>): Promise<AntiPiecesProductResponse> {
+    return apiClient.put(`${this.baseUrl}/products/${productId}`, productData);
+  }
+
+  /**
+   * Delete an anti-pieces product (requires authentication and ownership)
+   */
+  async deleteProduct(productId: string): Promise<{ success: boolean; message: string }> {
+    return apiClient.delete(`${this.baseUrl}/products/${productId}`);
+  }
 }
 
 // Create and export a singleton instance
